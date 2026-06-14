@@ -109,7 +109,7 @@ def main() -> None:
 
     fig = plt.figure(figsize=(14, 6))
     fig.subplots_adjust(top=0.88, wspace=0.3)
-    _last_mtime: float = 0.0
+    _last_step: int = -1
     running = True
 
     def _on_close(*_: Any) -> None:
@@ -126,15 +126,16 @@ def main() -> None:
         while running:
             try:
                 if path.exists():
-                    mtime = path.stat().st_mtime
-                    if mtime > _last_mtime:
-                        state = read_state(path)
-                        _last_mtime = mtime
-                        if state is not None:
+                    state = read_state(path)
+                    if state is not None:
+                        step = state.get("step_count", -1)
+                        if step != _last_step:
+                            _last_step = step
                             surface = state.get("options_surface")
                             if surface is not None:
                                 render_surface(fig, surface)
                                 fig.canvas.draw_idle()
+                                plt.pause(0.001)
             except Exception:
                 pass
             plt.pause(sleep_s)
