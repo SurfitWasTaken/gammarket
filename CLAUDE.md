@@ -594,10 +594,28 @@ Analytics layers in Phase 6 may inject additional callbacks without touching LOB
   (min(vol_ratio, vol_ratio_cap) − 1))))` with config
   `equity_mms[].vol_ratio_cap` (default `10.0`). The Phase 3 vol-spread test
   exercises ratios far below 10, so its contract is unchanged.
-- Any further fix that changes matching/resting semantics must be config-gated
-  with the default preserving pre-Phase-6 behaviour (frozen tests).
-- The root cause found in diagnosis is recorded in the workplan/commit, not
-  guessed at here.
+- **Post-only quoting:** `equity_mms[].post_only` (default `false` preserves
+  pre-Phase-6 trajectories; `true` in shipped configs). When set, the MM clips
+  its quotes strictly inside the live BBO so they can never cross the book.
+- **Diagnosis results (2026-07-05).** Three interacting causes, none of them
+  market-order surplus-rest:
+  1. *Bounce-vol feedback* → the crash. Rolling vol is measured off
+     trade-price returns, which bounce between the MMs' own quotes, so a
+     wider spread raises the vol reading which widens the spread — runaway
+     until `bid = mid − half_spread − skew < 0` → LOB `ValueError`.
+     Fixed by `vol_ratio_cap` (+ the ≥1-tick clamp as a backstop).
+  2. *MM-vs-MM hot-potato churn* → price ratchet. An inventory-skewed MM's
+     fresh bid lifted the other MM's stale ask (65% of all volume was
+     MM-vs-MM); mutual fills printed ever higher while pair inventory —
+     which mutual trades cannot change — stayed displaced. Fixed by
+     `post_only`.
+  3. *Skew integrator* → residual drift. `skew = risk_aversion × position`
+     shifts both quotes relative to a mid made of the MMs' own quotes; any
+     persistently displaced inventory integrates into unbounded drift
+     (drift at 20k steps: +3105 ticks at `risk_aversion 0.05`, +132 at
+     0.002). Price-insensitive retail flow means skew cannot manage
+     inventory anyway. This is a **calibration** knob: `phase6.yaml` runs
+     with a small `risk_aversion`; the mechanism is documented, not removed.
 
 ### F4 — Hot-loop vol: O(window) per step
 - `Clock._build_state` slices `self.tape.fills[-(vol_window+1):]` and builds

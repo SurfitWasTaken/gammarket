@@ -37,6 +37,8 @@ agents:
       vol_window: 20
       vol_multiplier: 2.0
       baseline_vol_bps: 5.0
+      vol_ratio_cap: 10.0   # F3: caps the bounce-vol spread feedback
+      post_only: true       # F3: quotes never cross the BBO (stops MM-vs-MM churn)
 
     - id: "mm_conservative"
       arrival_rate: 100.0
@@ -48,6 +50,8 @@ agents:
       vol_window: 20
       vol_multiplier: 2.0
       baseline_vol_bps: 5.0
+      vol_ratio_cap: 10.0   # F3: caps the bounce-vol spread feedback
+      post_only: true       # F3: quotes never cross the BBO (stops MM-vs-MM churn)
 
   # Phase 5: the options dealer (delta-hedging market maker).
   options_mm:

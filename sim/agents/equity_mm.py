@@ -30,6 +30,16 @@ class EquityMMConfig:
     vol_window: int
     vol_multiplier: float
     baseline_vol_bps: float
+    # F3: rolling vol is measured off trade-price returns, which bounce
+    # between the MM's own bid and ask — so an uncapped vol_ratio lets the
+    # spread feed its own vol reading and run away. The cap breaks the loop.
+    vol_ratio_cap: float = 10.0
+    # F3: when True, quotes are clipped inside the BBO so they can never
+    # cross the book. Without this, two inventory-skewed MMs lift each
+    # other's stale quotes in a hot-potato loop that trends the mid
+    # without any external flow. Default False preserves the pre-Phase-6
+    # trajectories that the e2e tests pin.
+    post_only: bool = False
 
 
 class EquityMarketMaker(Agent):
@@ -39,7 +49,7 @@ class EquityMarketMaker(Agent):
     on both sides with:
       - mid_price = (best_bid + best_ask) / 2  (or last_fill_price if one-sided)
       - rolling_vol_bps from MarketState (or baseline_vol_bps during warm-up)
-      - vol_ratio = rolling_vol_bps / baseline_vol_bps
+      - vol_ratio = min(rolling_vol_bps / baseline_vol_bps, vol_ratio_cap)  (F3)
       - effective_spread = spread_target * (1 + vol_multiplier * (vol_ratio - 1))
       - half_spread = effective_spread / 2
       - skew = risk_aversion * position
@@ -124,6 +134,7 @@ class EquityMarketMaker(Agent):
                 if self._baseline_vol_bps > 0
                 else 1.0
             )
+            vol_ratio = min(vol_ratio, self.config.vol_ratio_cap)
         else:
             vol_ratio = 1.0
 
@@ -137,6 +148,22 @@ class EquityMarketMaker(Agent):
 
         if bid_price >= ask_price:
             bid_price = ask_price - 1
+
+        # F3: post-only — never cross the live BBO. The snapshot BBO may
+        # include this MM's own about-to-be-cancelled quotes, which only
+        # makes the clip more conservative.
+        if self.config.post_only:
+            if state.best_ask is not None and bid_price >= state.best_ask:
+                bid_price = state.best_ask - 1
+            if state.best_bid is not None and ask_price <= state.best_bid:
+                ask_price = state.best_bid + 1
+
+        # F3: a clamped quote is legal; a non-positive price is a LOB
+        # ValueError. Keep 1 <= bid < ask even under extreme skew/vol.
+        if bid_price < 1:
+            bid_price = 1
+        if ask_price <= bid_price:
+            ask_price = bid_price + 1
 
         if self._resting_bid_id:
             actions.append(Cancel(self._resting_bid_id, self.agent_id, state.timestamp))

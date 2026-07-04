@@ -94,6 +94,8 @@ def _build_sim(cfg: dict) -> tuple[LimitOrderBook, Tape, Clock, list]:
                 vol_window=int(mm_cfg.get("vol_window", 20)),
                 vol_multiplier=float(mm_cfg.get("vol_multiplier", 1.0)),
                 baseline_vol_bps=float(mm_cfg.get("baseline_vol_bps", 5.0)),
+                vol_ratio_cap=float(mm_cfg.get("vol_ratio_cap", 10.0)),
+                post_only=bool(mm_cfg.get("post_only", False)),
             ),
             rng=rng,
         ))

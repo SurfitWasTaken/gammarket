@@ -95,14 +95,15 @@ right phase. `[~]` = in progress. Detail for the current phase lives in
 - [x] `docs/PHASE_6_WORKPLAN.md` written
 
 **Step 1 — quick fixes**
-- [ ] F4: Clock rolling-vol O(window) slice (was full-tape scan per step)
-- [ ] F4: align `state_writer` vol ddof with Clock (population)
-- [ ] F5: self-trade wash fix in `base.on_fills` + regression test
+- [x] F4: Clock rolling-vol O(window) slice (was full-tape scan per step)
+- [x] F4: align `state_writer` vol ddof with Clock (population)
+- [x] F5: self-trade wash fix in `base.on_fills` (+ equity MM cash) + regression tests
 
 **Step 2 — long-run stability (F3)**
-- [ ] reproduce + root-cause the −1388-bid crash at ~2–5k steps
-- [ ] ≥1-tick price clamp; `vol_ratio_cap` in MM spread formula
-- [ ] long-run smoke test (≥10k steps, no crash, spread ≥ 1 tick)
+- [x] root-caused the −1388-bid crash: bounce-vol spread feedback + MM-vs-MM
+      hot-potato churn + skew integrator (findings recorded in CLAUDE.md F3)
+- [x] ≥1-tick price clamp; `vol_ratio_cap`; `post_only` quoting (default off)
+- [x] long-run smoke test (10k steps, spreads ≥ 1 tick, zero MM-vs-MM churn)
 
 **Step 3 — collection (F1)**
 - [ ] `StepRecord` + `Clock.on_step` + `sim/analytics/collector.py` + run_sim wiring + tests
