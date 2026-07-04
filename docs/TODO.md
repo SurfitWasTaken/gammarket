@@ -85,19 +85,48 @@ right phase. `[~]` = in progress. Detail for the current phase lives in
 - [x] ROADMAP.md + this file updated
 - [x] no P0/P1 debt — one latent pre-existing edge logged in Backlog below
 
-## Now: Phase 6 — Calibration, Analytics, Full Run (255 tests, live dashboard shipped 2026-06-13)
-- [x] `sim/live/state_writer.py` — agent state extraction + atomic JSON write
-- [x] `sim/live/agent_viewer.py` — Rich per-agent dashboards (market overview,
-      retail table, institution, equity MMs, options MM, options flow)
-- [x] `sim/live/surface_viz.py` — matplotlib 3D options price surface (strike × expiry)
-- [x] `sim/live/sim_runner.py` — event loop with live state broadcasting
-- [x] `sim/live/launch.py` — macOS Terminal.app spawner via osascript (8 windows)
+## Now: Phase 6 — Calibration, Analytics, Full Run (see PHASE_6_WORKPLAN.md)
+**Shipped earlier (2026-06-13): live dashboard**
+- [x] `sim/live/` — state_writer, agent_viewer, surface_viz, sim_runner, launch
 - [x] Added `rich>=13.0` to `requirements.txt`; all 255 tests unchanged
-- [ ] effective-spread / depth / realized-vol metrics in `analytics/`
-- [ ] parameter calibration sweeps
-- [ ] dynamic vol surface (replace FlatVolSurface behind the same interface)
-- [ ] validate the stylised-facts checklist in GOALS.md end-to-end
-- [ ] full-run report / plots
+
+**Step 0 — design decisions (blocking)**
+- [x] F1–F9 resolved and recorded as "Phase 6 Implementation Contracts" in CLAUDE.md
+- [x] `docs/PHASE_6_WORKPLAN.md` written
+
+**Step 1 — quick fixes**
+- [ ] F4: Clock rolling-vol O(window) slice (was full-tape scan per step)
+- [ ] F4: align `state_writer` vol ddof with Clock (population)
+- [ ] F5: self-trade wash fix in `base.on_fills` + regression test
+
+**Step 2 — long-run stability (F3)**
+- [ ] reproduce + root-cause the −1388-bid crash at ~2–5k steps
+- [ ] ≥1-tick price clamp; `vol_ratio_cap` in MM spread formula
+- [ ] long-run smoke test (≥10k steps, no crash, spread ≥ 1 tick)
+
+**Step 3 — collection (F1)**
+- [ ] `StepRecord` + `Clock.on_step` + `sim/analytics/collector.py` + run_sim wiring + tests
+
+**Step 4 — metrics (F2)**
+- [ ] resample_mid, realized_vol, effective_spread, roll_measure, kyle_lambda,
+      acf of r², ljung_box (scipy.chi2), excess_kurtosis, depth stats + tests
+
+**Step 5 — facts evaluator (F9)**
+- [ ] `sim/analytics/facts.py` `evaluate_stylised_facts` + tests
+
+**Step 6 — baseline + calibration (F8)**
+- [ ] `sim/analytics/sweep.py`; baseline measurement; parameter sweeps
+- [ ] fallback if needed: `retail.vol_feedback` (default 0.0 = off) + tests
+- [ ] `sim/config/phase6.yaml` calibrated config
+
+**Step 7 — EWMA surface (F6)**
+- [ ] `EwmaVolSurface` + dealer update hook + `surface_mode` switch (default flat) + tests
+
+**Step 8 — full run + report (F9)**
+- [ ] `run_phase6.py`: 3 seeds × ≥30k steps, facts table, figures, `results/phase6/report.md`
+
+**Step 9 — close-out**
+- [ ] CLAUDE.md / ROADMAP / TODO / README sync; stylised-facts boxes; test count
 
 ## Backlog (non-blocking, revisit when relevant)
 - [ ] P2-2 carryover: drop the `equity_mm`/`equity_mms` singular shim **iff**

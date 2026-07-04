@@ -549,6 +549,114 @@ Analytics layers in Phase 6 may inject additional callbacks without touching LOB
   logged in `docs/TODO.md` backlog and deferred to Phase 6 unless a run shows
   the spot leaving the strike grid materially.
 
+## Phase 6 Implementation Contracts
+
+> Resolved at the start of Phase 6 execution (2026-07-05) from
+> `docs/PHASE_6_WORKPLAN.md` Step 0. These are **frozen** — the stylised-facts
+> validation and every Phase 6 metric depend on them.
+
+### F1 — Per-step market-data collection (Clock callback, no file I/O)
+- `Clock.__init__` gains `on_step: Callable[[StepRecord], None] | None = None`,
+  fired **once at the end of every `step()`**. Backward-compatible: `None`
+  changes nothing (all pre-Phase-6 call sites).
+- `StepRecord` is a frozen dataclass: `step`, `timestamp`, `best_bid`,
+  `best_ask`, `mid`, `spread`, `bid_depth`, `ask_depth` (resting qty at the
+  BBO price level), `last_fill_price`, `rolling_vol_bps`.
+- `sim/analytics/collector.py` `MarketDataCollector` accumulates records in
+  memory and exposes NumPy views on demand. **Zero file I/O in the loop.**
+- `run_sim.run()` always wires a collector and adds `"collector"` to its
+  results dict (additive; frozen tests unaffected).
+
+### F2 — Metric definitions (canonical return series = bar mid returns)
+- **Canonical return series** for the stylised facts: log returns of the mid
+  **resampled to fixed sim-time bars** (`resample_mid(times, mids,
+  bar_minutes)`, last-observation-carried-forward), not event-time returns.
+- Realized vol: `std(bar log returns) × sqrt(minutes_per_year / bar_minutes)`
+  (annualised fraction).
+- Effective spread (bps): `2·d·(p − m)/m × 1e4` per fill, `d` = +1 taker BUY /
+  −1 taker SELL, `m` = latest snapshot mid at/before the fill's timestamp.
+- Roll measure: `2·sqrt(max(0, −cov(Δp_t, Δp_{t−1})))` on trade prices.
+- Price impact: Kyle λ = OLS slope of per-bar Δmid on per-bar signed volume
+  (taker BUY +qty, SELL −qty); plus large-vs-small comparison (mean |Δmid|
+  around top-quartile-qty fills vs bottom-quartile).
+- Vol clustering: ACF of squared bar returns + **hand-rolled Ljung-Box** Q
+  statistic with p-value from `scipy.stats.chi2` (statsmodels is not approved).
+- Fat tails: excess kurtosis of bar returns (NumPy moments, Fisher convention).
+- All additions to `analytics/metrics.py` are **additive** — the six existing
+  functions are pinned by `test_metrics.py`.
+
+### F3 — Long-run stability guardrails
+- **Universal ≥1-tick clamp:** any agent-computed limit price is clamped to
+  ≥ 1 tick before an `Order` is built (extends Audit P1-5; a clamped quote is
+  legal, an exception is not).
+- **Vol-ratio cap:** the equity MM spread formula becomes
+  `effective_spread = max(1, round(spread_target · (1 + vol_multiplier ·
+  (min(vol_ratio, vol_ratio_cap) − 1))))` with config
+  `equity_mms[].vol_ratio_cap` (default `10.0`). The Phase 3 vol-spread test
+  exercises ratios far below 10, so its contract is unchanged.
+- Any further fix that changes matching/resting semantics must be config-gated
+  with the default preserving pre-Phase-6 behaviour (frozen tests).
+- The root cause found in diagnosis is recorded in the workplan/commit, not
+  guessed at here.
+
+### F4 — Hot-loop vol: O(window) per step
+- `Clock._build_state` slices `self.tape.fills[-(vol_window+1):]` and builds
+  the small price array directly — numerically identical to the old full-tape
+  `tape.prices()` scan, O(window) instead of O(fills) per step.
+- Vol remains **population std** (`ddof=0`) — `sim/live/state_writer.py` is
+  aligned to match (it used `ddof=1`; the Clock is canonical).
+
+### F5 — Self-trade accounting
+- `base.on_fills` **skips the position update** when
+  `fill.taker_agent_id == fill.maker_agent_id` (a self-trade is a wash, net 0);
+  it still discards both order ids. Regression test pins it.
+
+### F6 — Dynamic vol surface: EWMA realized vol, default off
+- `EwmaVolSurface` (in `sim/options/surface.py`) implements the `VolSurface`
+  protocol (flat across strikes/expiries) plus `update(mid, now_minutes)`:
+  EWMA of squared per-minute mid log returns, annualised via
+  `minutes_per_year`; σ clamped to `[sigma_floor, sigma_cap]`; seeded from
+  `vol_estimate`.
+- Config: `options_mm.surface_mode: flat | ewma` (**default `flat`** — Phase 5
+  determinism preserved), `options_mm.ewma_lambda` (default 0.97),
+  `sigma_floor` 0.05, `sigma_cap` 1.0.
+- The dealer calls `surface.update(...)` at each `step()` **only** when the
+  surface exposes it (`ewma` mode). Both construction sites switch on the key:
+  `run_sim._build_dealer` and `sim/live/sim_runner.py`.
+
+### F7 — No mid-run re-striking
+- The E6 decision stands for the whole project: the chain is built once.
+  The Phase 6 run config (`phase6.yaml`) **widens `strikes_pct` to ±10%**
+  instead, and the report tracks the fraction of the run with spot inside the
+  strike grid. Revisit only if validation shows material drift.
+
+### F8 — Calibration harness + run config
+- `sim/analytics/sweep.py`: `run_sweep(base_cfg, grid, seeds)` — sequential
+  `run_sim.run()` calls, per-run fact metrics, results returned in memory
+  (callers may write to `results/` **after** runs complete).
+- The calibrated long-run configuration lives in **`sim/config/phase6.yaml`**;
+  `sim/config/params.yaml` receives only **additive** keys so every config
+  pinned by frozen tests is unchanged.
+- Approved fallback if vol clustering / fat tails resist the parameter grid:
+  **retail vol-feedback** — `retail.vol_feedback` (default `0.0` = off, no
+  behaviour change): the retail order-size mean scales by
+  `1 + vol_feedback · (min(vol_ratio, vol_ratio_cap) − 1)` off
+  `rolling_vol_bps`. Config-gated, unit-tested.
+
+### F9 — Validation spec (the project's pass criteria)
+- Run: **3 seeds × ≥ 30_000 steps** on `phase6.yaml` via `run_phase6.py`.
+  No crash. Per seed:
+  1. Positive spread: quoted spread ≥ 1 tick at **every** snapshot.
+  2. Spread↑ with vol: corr(windowed realized vol, windowed mean spread) > 0.2.
+  3. Price impact: Kyle λ > 0 **and** top-quartile-qty fills move the mid more
+     than bottom-quartile.
+  4. Efficiency: |ACF_k(bar returns)| < 3/√n for ≥ 90% of lags 1..20.
+  5. Vol clustering: Ljung-Box on squared bar returns (10 lags) p < 0.05.
+  6. Fat tails: excess kurtosis of bar returns > 0.
+  7. Dealer delta: post-hedge |net delta| ≤ max(threshold, 0.5) lots (E2).
+- **The project is done when all 7 hold on ≥ 2 of 3 seeds** and the report
+  (`results/phase6/report.md` + figures) is committed.
+
 ## Known Design Decisions & Rationale
 - **Integer ticks for prices**: avoids floating-point drift corrupting the LOB sort order
 - **Poisson arrivals for retail**: standard in market microstructure literature (Glosten-Milgrom)
