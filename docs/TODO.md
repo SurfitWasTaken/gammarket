@@ -109,8 +109,9 @@ right phase. `[~]` = in progress. Detail for the current phase lives in
 - [x] `StepRecord` + `Clock.on_step` + `sim/analytics/collector.py` + run_sim wiring + tests
 
 **Step 4 — metrics (F2)**
-- [ ] resample_mid, realized_vol, effective_spread, roll_measure, kyle_lambda,
-      acf of r², ljung_box (scipy.chi2), excess_kurtosis, depth stats + tests
+- [x] resample_mid, realized_vol, effective_spread_bps, roll_measure,
+      signed_volume_bars, kyle_lambda, price_impact_by_quartile, ljung_box
+      (scipy.chi2), excess_kurtosis + known-value tests
 
 **Step 5 — facts evaluator (F9)**
 - [ ] `sim/analytics/facts.py` `evaluate_stylised_facts` + tests
