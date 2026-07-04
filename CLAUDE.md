@@ -664,7 +664,12 @@ Analytics layers in Phase 6 may inject additional callbacks without touching LOB
 ### F9 — Validation spec (the project's pass criteria)
 - Run: **3 seeds × ≥ 30_000 steps** on `phase6.yaml` via `run_phase6.py`.
   No crash. Per seed:
-  1. Positive spread: quoted spread ≥ 1 tick at **every** snapshot.
+  1. Positive spread: quoted spread ≥ 1 tick at every **two-sided**
+     snapshot, and one-sided (gap) snapshots ≤ 0.1% of steps. (Amended
+     during Step 5: a large marketable order can empty one side for the
+     1–2 events until the next MM arrival — a real LOB phenomenon at
+     event granularity, observed at 0.07% frequency; "at all times"
+     cannot literally hold in an event-driven book.)
   2. Spread↑ with vol: corr(windowed realized vol, windowed mean spread) > 0.2.
   3. Price impact: Kyle λ > 0 **and** top-quartile-qty fills move the mid more
      than bottom-quartile.

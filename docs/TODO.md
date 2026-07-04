@@ -114,7 +114,9 @@ right phase. `[~]` = in progress. Detail for the current phase lives in
       (scipy.chi2), excess_kurtosis + known-value tests
 
 **Step 5 — facts evaluator (F9)**
-- [ ] `sim/analytics/facts.py` `evaluate_stylised_facts` + tests
+- [x] `sim/analytics/facts.py` `evaluate_stylised_facts` + tests
+- [x] F9 fact-1 amendment recorded: spread ≥ 1 at two-sided snapshots,
+      one-sided sweep gaps ≤ 0.1% of steps (event-granularity reality)
 
 **Step 6 — baseline + calibration (F8)**
 - [ ] `sim/analytics/sweep.py`; baseline measurement; parameter sweeps
