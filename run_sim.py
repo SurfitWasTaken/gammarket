@@ -24,6 +24,7 @@ from sim.agents.institution import Institution
 from sim.agents.options_flow import OptionsFlow, OptionsFlowConfig
 from sim.agents.options_mm import OptionsMarketMaker, OptionsMMConfig
 from sim.agents.retail import Retail
+from sim.analytics.collector import MarketDataCollector
 from sim.analytics.metrics import (
     autocorrelation,
     fill_prices,
@@ -196,9 +197,10 @@ def _register(clock: Clock, agents: list, cfg: dict) -> None:
 def run(cfg: dict) -> dict[str, Any]:
     """Build the sim from `cfg`, run to completion, return diagnostics.
 
-    The returned dict has keys `tape`, `book`, `clock`, `agents`, `cfg`.
-    The function is pure of file I/O: the same `cfg` always yields the
-    same outcome (modulo numpy seeding, which is honoured).
+    The returned dict has keys `tape`, `book`, `clock`, `agents`, `cfg`,
+    and `collector` (the per-step `MarketDataCollector`, F1). The
+    function is pure of file I/O: the same `cfg` always yields the same
+    outcome (modulo numpy seeding, which is honoured).
     """
     market = cfg["market"]
     rng = np.random.default_rng(int(market["seed"]))
@@ -206,7 +208,8 @@ def run(cfg: dict) -> dict[str, Any]:
     _seed_bbo(book, market)
     agents = _build_agents(cfg, rng)
     vol_window = int(market.get("vol_window", 20))
-    clock = Clock(book, tape, rng, vol_window=vol_window)
+    collector = MarketDataCollector()
+    clock = Clock(book, tape, rng, vol_window=vol_window, on_step=collector)
     _register(clock, agents, cfg)
     clock.run(int(market["max_steps"]))
     return {
@@ -215,6 +218,7 @@ def run(cfg: dict) -> dict[str, Any]:
         "clock": clock,
         "agents": agents,
         "cfg": cfg,
+        "collector": collector,
     }
 
 

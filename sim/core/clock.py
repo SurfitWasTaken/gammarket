@@ -11,13 +11,48 @@ from __future__ import annotations
 
 import heapq
 from dataclasses import dataclass, field
+from typing import Callable, Optional
 
 import numpy as np
 
 from sim.agents.base import Agent, MarketState
-from sim.core.events import Cancel, Order
+from sim.core.events import Cancel, Order, Side
 from sim.core.lob import LimitOrderBook
 from sim.core.tape import Tape
+
+
+@dataclass(frozen=True)
+class StepRecord:
+    """Per-step market snapshot emitted through `Clock.on_step` (F1).
+
+    Captured at the end of every `Clock.step()`, after the stepping
+    agent's actions have been applied to the book. This is the only
+    place mid/spread/depth exist as a time series — `MarketState` is
+    transient and the tape records fills only.
+
+    Args:
+        step: 1-based step counter (equals `Clock.step_count`).
+        timestamp: Simulation time in minutes.
+        best_bid: Best bid in ticks, or None if the bid side is empty.
+        best_ask: Best ask in ticks, or None if the ask side is empty.
+        mid: (best_bid + best_ask) / 2, or None if one-sided.
+        spread: best_ask - best_bid, or None if one-sided.
+        bid_depth: Resting quantity at the best bid price level (0 if none).
+        ask_depth: Resting quantity at the best ask price level (0 if none).
+        last_fill_price: Most recent fill price, or None.
+        rolling_vol_bps: Rolling volatility in bps, or None during warm-up.
+    """
+
+    step: int
+    timestamp: float
+    best_bid: Optional[int]
+    best_ask: Optional[int]
+    mid: Optional[float]
+    spread: Optional[int]
+    bid_depth: int
+    ask_depth: int
+    last_fill_price: Optional[int]
+    rolling_vol_bps: Optional[float]
 
 
 @dataclass(order=True)
@@ -44,6 +79,9 @@ class Clock:
             deterministic.
         vol_window: Number of recent fills to use for rolling volatility
             calculation. Must be >= 2.
+        on_step: Optional callback fired once at the end of every
+            `step()` with a `StepRecord` snapshot (F1). None (the
+            default) changes nothing — all pre-Phase-6 call sites.
     """
 
     def __init__(
@@ -52,6 +90,7 @@ class Clock:
         tape: Tape,
         rng: np.random.Generator,
         vol_window: int = 20,
+        on_step: Optional[Callable[[StepRecord], None]] = None,
     ) -> None:
         if vol_window < 2:
             raise ValueError(f"vol_window must be >= 2, got {vol_window}")
@@ -59,6 +98,7 @@ class Clock:
         self.tape: Tape = tape
         self.rng: np.random.Generator = rng
         self.vol_window: int = vol_window
+        self.on_step: Optional[Callable[[StepRecord], None]] = on_step
         self.agents: dict[str, Agent] = {}
         self.rates: dict[str, float] = {}
         self._heap: list[_Event] = []
@@ -118,6 +158,8 @@ class Clock:
                 owner.open_order_ids.discard(action.order_id)
         rate = self.rates[event.agent_id]
         self._schedule_next(agent, dt=self.rng.exponential(1.0 / rate))
+        if self.on_step is not None:
+            self.on_step(self._build_step_record())
         return self.now
 
     def run(self, max_steps: int) -> float:
@@ -133,22 +175,44 @@ class Clock:
             _Event(time=self.now + dt, seq=self._seq, agent_id=agent.agent_id),
         )
 
+    def _rolling_vol_bps(self, mid: Optional[float]) -> Optional[float]:
+        """Rolling volatility of fill-to-fill returns in bps, or None
+        during warm-up / without a reference mid."""
+        if mid is None or mid <= 0:
+            return None
+        # Only the last `vol_window` fills matter, so slice the tape tail
+        # instead of materialising every price — O(window) per step, not
+        # O(fills) (F4; numerically identical to the full scan).
+        recent = self.tape.fills[-self.vol_window :]
+        if len(recent) < 2:
+            return None
+        window = np.fromiter(
+            (f.price for f in recent), dtype=np.float64, count=len(recent)
+        )
+        # Returns are already fractional (Δprice / price), so the
+        # std is a fraction of price; * 1e4 converts directly to bps.
+        returns = np.diff(window) / window[:-1]
+        return float(np.std(returns)) * 10_000.0
+
+    def _build_step_record(self) -> StepRecord:
+        bb, ba = self.book.best_bid(), self.book.best_ask()
+        mid = self.book.mid()
+        return StepRecord(
+            step=self.step_count,
+            timestamp=self.now,
+            best_bid=bb,
+            best_ask=ba,
+            mid=mid,
+            spread=(ba - bb) if bb is not None and ba is not None else None,
+            bid_depth=self.book.depth(Side.BUY, bb) if bb is not None else 0,
+            ask_depth=self.book.depth(Side.SELL, ba) if ba is not None else 0,
+            last_fill_price=self.tape.last_fill_price(),
+            rolling_vol_bps=self._rolling_vol_bps(mid),
+        )
+
     def _build_state(self, agent: Agent) -> MarketState:
         mid = self.book.mid()
-        rolling_vol_bps: float | None = None
-        if mid is not None and mid > 0:
-            # Only the last `vol_window` fills matter, so slice the tape tail
-            # instead of materialising every price — O(window) per step, not
-            # O(fills) (F4; numerically identical to the full scan).
-            recent = self.tape.fills[-self.vol_window :]
-            if len(recent) >= 2:
-                window = np.fromiter(
-                    (f.price for f in recent), dtype=np.float64, count=len(recent)
-                )
-                # Returns are already fractional (Δprice / price), so the
-                # std is a fraction of price; * 1e4 converts directly to bps.
-                returns = np.diff(window) / window[:-1]
-                rolling_vol_bps = float(np.std(returns)) * 10_000.0
+        rolling_vol_bps = self._rolling_vol_bps(mid)
         return MarketState(
             best_bid=self.book.best_bid(),
             best_ask=self.book.best_ask(),

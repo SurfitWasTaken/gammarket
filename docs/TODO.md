@@ -106,7 +106,7 @@ right phase. `[~]` = in progress. Detail for the current phase lives in
 - [x] long-run smoke test (10k steps, spreads ≥ 1 tick, zero MM-vs-MM churn)
 
 **Step 3 — collection (F1)**
-- [ ] `StepRecord` + `Clock.on_step` + `sim/analytics/collector.py` + run_sim wiring + tests
+- [x] `StepRecord` + `Clock.on_step` + `sim/analytics/collector.py` + run_sim wiring + tests
 
 **Step 4 — metrics (F2)**
 - [ ] resample_mid, realized_vol, effective_spread, roll_measure, kyle_lambda,
