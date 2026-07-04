@@ -135,14 +135,19 @@ class Clock:
 
     def _build_state(self, agent: Agent) -> MarketState:
         mid = self.book.mid()
-        prices = self.tape.prices()
         rolling_vol_bps: float | None = None
-        if len(prices) >= 2 and mid is not None and mid > 0:
-            window = prices[-self.vol_window :]
-            if len(window) >= 2:
+        if mid is not None and mid > 0:
+            # Only the last `vol_window` fills matter, so slice the tape tail
+            # instead of materialising every price — O(window) per step, not
+            # O(fills) (F4; numerically identical to the full scan).
+            recent = self.tape.fills[-self.vol_window :]
+            if len(recent) >= 2:
+                window = np.fromiter(
+                    (f.price for f in recent), dtype=np.float64, count=len(recent)
+                )
                 # Returns are already fractional (Δprice / price), so the
                 # std is a fraction of price; * 1e4 converts directly to bps.
-                returns = np.diff(window.astype(np.float64)) / window[:-1]
+                returns = np.diff(window) / window[:-1]
                 rolling_vol_bps = float(np.std(returns)) * 10_000.0
         return MarketState(
             best_bid=self.book.best_bid(),

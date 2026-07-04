@@ -93,6 +93,12 @@ class Agent(ABC):
             maker_mine = fill.maker_agent_id == self.agent_id
             if not taker_mine and not maker_mine:
                 continue
+            if taker_mine and maker_mine:
+                # Self-trade: the agent is both sides of the fill, so the
+                # net position change is zero (F5) — only clear bookkeeping.
+                self.open_order_ids.discard(fill.taker_order_id)
+                self.open_order_ids.discard(fill.maker_order_id)
+                continue
             i_bought = (taker_mine and fill.aggressor_side is Side.BUY) or (
                 maker_mine and fill.aggressor_side is Side.SELL
             )

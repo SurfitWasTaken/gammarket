@@ -186,6 +186,11 @@ class EquityMarketMaker(Agent):
                 elif fill.maker_order_id == self._resting_ask_id:
                     self._resting_ask_id = None
 
+            if taker_mine and maker_mine:
+                # Self-trade: the buy and sell legs cancel, so cash washes
+                # to zero — mirror of the base-class position wash (F5).
+                continue
+
             # Cash flow must update for every fill the MM is party to,
             # taker or maker — an inventory-skewed quote can be marketable
             # on submission, making the MM the taker (Audit P0-2).

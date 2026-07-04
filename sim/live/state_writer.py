@@ -30,7 +30,8 @@ def _compute_rolling_vol(tape: Tape, vol_window: int) -> float | None:
     returns = prices[1:] / prices[:-1] - 1.0
     if len(returns) < 2:
         return None
-    return float(np.std(returns, ddof=1) * 1e4)
+    # Population std (ddof=0): the Clock's rolling vol is canonical (F4).
+    return float(np.std(returns) * 1e4)
 
 
 def _extract_fills(tape: Tape) -> list[dict]:

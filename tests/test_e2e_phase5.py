@@ -140,14 +140,24 @@ class TestPhase5EndToEnd:
 
     def test_final_net_delta_is_flat_modulo_drift(self, result):
         """At run end the dealer is hedged at the final mid, within the
-        quantisation floor plus a small drift allowance (the underlying
-        moves between the last hedge and the final event)."""
+        quantisation floor plus a drift allowance (the underlying moves
+        between the dealer's last hedge check and the final event).
+
+        The allowance is a path-dependent heuristic, not the E2/E3
+        contract (which `test_net_delta_within_bound_after_each_hedge_
+        cycle` pins per cycle). It was originally tuned at 1.0 on a
+        trajectory where the equity MMs carried phantom self-trade
+        inventory; the Phase 6 F5 wash fix corrected their positions and
+        shifted the path, so the same seed now ends with more late-run
+        drift. 2.0 lots = the 0.5 quantisation floor + 1.5 lots of
+        gamma-driven drift headroom.
+        """
         dealer = get_dealer(result)
         mid = result["book"].mid()
         assert mid is not None
         spot = spot_from_book(float(mid), dealer.tick_size)
         net = dealer.net_delta_lots(spot, float(result["clock"].now))
-        assert abs(net) <= 1.0
+        assert abs(net) <= 2.0
 
     def test_deterministic_under_fixed_seed(self):
         a = run(make_config(max_steps=300))
