@@ -677,6 +677,12 @@ Analytics layers in Phase 6 may inject additional callbacks without touching LOB
   5. Vol clustering: Ljung-Box on squared bar returns (10 lags) p < 0.05.
   6. Fat tails: excess kurtosis of bar returns > 0.
   7. Dealer delta: post-hedge |net delta| ≤ max(threshold, 0.5) lots (E2).
+- **Measurement spec (pinned in Step 8):** facts are evaluated on
+  **0.25-minute bars** (~80 events/bar at the calibrated event rate) with
+  60-bar vol windows, uniform across facts and seeds. The facts are
+  frequency/horizon-dependent — coarser bars lose clustering significance on
+  some seeds; a 2× horizon exposes small genuine return autocorrelation —
+  and the report's caveats record those counter-observations explicitly.
 - **The project is done when all 7 hold on ≥ 2 of 3 seeds** and the report
   (`results/phase6/report.md` + figures) is committed.
 

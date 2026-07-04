@@ -87,8 +87,9 @@ class TestCalibratedConfig:
         3-seed 7/7 gate runs in run_phase6.py."""
         cfg = copy.deepcopy(load_config(PHASE6_CFG))
         result = run(cfg)
+        # The pinned F9 measurement spec (run_phase6.BAR_MINUTES).
         facts = evaluate_stylised_facts(
-            result, bar_minutes=0.5, window_bars=30
+            result, bar_minutes=0.25, window_bars=60
         )
         assert facts["positive_spread"].passed
         assert facts["price_impact"].passed

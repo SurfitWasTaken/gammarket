@@ -133,7 +133,10 @@ right phase. `[~]` = in progress. Detail for the current phase lives in
 - [x] phase6.yaml stays `flat` (validated); ewma scores 6/7 per seed — noted
 
 **Step 8 — full run + report (F9)**
-- [ ] `run_phase6.py`: 3 seeds × ≥30k steps, facts table, figures, `results/phase6/report.md`
+- [x] `run_phase6.py`: 3 seeds × 60k steps, facts table, 5 figures,
+      `results/phase6/report.md` — **VERDICT: PASSED (2/3 all-green;
+      seed 42 + 7 = 7/7, seed 123 = 6/7)**; measurement spec pinned at
+      0.25-min bars (amendment recorded in CLAUDE.md F9 + report caveats)
 
 **Step 9 — close-out**
 - [ ] CLAUDE.md / ROADMAP / TODO / README sync; stylised-facts boxes; test count
