@@ -353,6 +353,11 @@ class OptionsMarketMaker(Agent):
                 return []
             mid = float(state.last_fill_price)
         spot = spot_from_book(mid, self.tick_size)
+        # F6: a dynamic surface folds the live mid in before this step's
+        # pricing; the flat surface has no `update` and is left alone.
+        update = getattr(self.surface, "update", None)
+        if update is not None:
+            update(spot, state.timestamp)
         return self._hedge(spot, state.timestamp)
 
     def on_fills(self, fills: list[Fill]) -> None:

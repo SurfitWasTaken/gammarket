@@ -58,7 +58,7 @@ from sim.core.events import Order, Side
 from sim.core.lob import LimitOrderBook
 from sim.core.tape import Tape
 from sim.options.chain import build_chain, spot_from_book
-from sim.options.surface import FlatVolSurface
+from sim.options.surface import surface_from_config
 from sim.snapshot import book_snapshot
 
 
@@ -220,7 +220,7 @@ def _setup_sim(config: dict) -> None:
             ),
             rng=rng,
             chain=chain,
-            surface=FlatVolSurface(float(options_mm_cfg["vol_estimate"])),
+            surface=surface_from_config(options_mm_cfg, float(market["minutes_per_year"])),
             risk_free_rate=float(config["options"]["risk_free_rate"]),
             minutes_per_year=float(market["minutes_per_year"]),
             tick_size=tick_size,

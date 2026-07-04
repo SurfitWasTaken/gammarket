@@ -88,6 +88,9 @@ agents:
     delta_hedge_threshold: 0.05  # re-hedge if |net delta| exceeds this (E3)
     gamma_limit: 500             # portfolio gamma cap, lots/tick (E5)
     option_tick: 1               # option quote grid (E4)
+    surface_mode: flat           # F6: the validated config; ewma is available
+                                 # but the F9 gate was calibrated under flat
+                                 # (ewma scored 6/7 per seed — see report)
 
   options_flow:
     arrival_rate: 5.0            # option trades per minute

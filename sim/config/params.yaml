@@ -64,6 +64,7 @@ agents:
     delta_hedge_threshold: 0.05  # re-hedge if |net delta| exceeds this, in lots (E3)
     gamma_limit: 500             # portfolio gamma cap, lots/tick (E5)
     option_tick: 1               # option quote grid (E4); defaults to market tick
+    surface_mode: flat           # F6: flat | ewma (ewma_lambda/sigma_floor/sigma_cap)
 
   # Phase 5: the quote-driven options demand (E1) — a Poisson taker that
   # lifts/hits the dealer's quotes. Its presence switches run_sim.py to the

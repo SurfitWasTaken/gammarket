@@ -37,7 +37,7 @@ from sim.core.events import Order, Side
 from sim.core.lob import LimitOrderBook
 from sim.core.tape import Tape
 from sim.options.chain import build_chain, spot_from_book
-from sim.options.surface import FlatVolSurface
+from sim.options.surface import surface_from_config
 
 
 def _build_book_and_tape(cfg_market: dict) -> tuple[LimitOrderBook, Tape]:
@@ -170,7 +170,7 @@ def _build_dealer(cfg: dict, rng: np.random.Generator) -> OptionsMarketMaker:
         ),
         rng=rng,
         chain=chain,
-        surface=FlatVolSurface(float(mm_cfg["vol_estimate"])),
+        surface=surface_from_config(mm_cfg, float(market["minutes_per_year"])),
         risk_free_rate=float(options["risk_free_rate"]),
         minutes_per_year=float(market["minutes_per_year"]),
         tick_size=tick_size,

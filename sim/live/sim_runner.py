@@ -28,7 +28,7 @@ from sim.core.lob import LimitOrderBook
 from sim.core.tape import Tape
 from sim.live.state_writer import extract_all_state, write_state
 from sim.options.chain import build_chain
-from sim.options.surface import FlatVolSurface
+from sim.options.surface import surface_from_config
 
 
 def _build_sim(cfg: dict) -> tuple[LimitOrderBook, Tape, Clock, list]:
@@ -125,7 +125,7 @@ def _build_sim(cfg: dict) -> tuple[LimitOrderBook, Tape, Clock, list]:
             ),
             rng=rng,
             chain=chain,
-            surface=FlatVolSurface(float(om_cfg["vol_estimate"])),
+            surface=surface_from_config(om_cfg, float(market["minutes_per_year"])),
             risk_free_rate=float(cfg["options"]["risk_free_rate"]),
             minutes_per_year=float(market["minutes_per_year"]),
             tick_size=tick_size,

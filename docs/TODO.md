@@ -128,7 +128,9 @@ right phase. `[~]` = in progress. Detail for the current phase lives in
       clustering — noted for the report)
 
 **Step 7 — EWMA surface (F6)**
-- [ ] `EwmaVolSurface` + dealer update hook + `surface_mode` switch (default flat) + tests
+- [x] `EwmaVolSurface` (time-adjusted decay, floor/cap) + dealer update hook +
+      `surface_from_config` switch at all 3 construction sites + 11 tests
+- [x] phase6.yaml stays `flat` (validated); ewma scores 6/7 per seed — noted
 
 **Step 8 — full run + report (F9)**
 - [ ] `run_phase6.py`: 3 seeds × ≥30k steps, facts table, figures, `results/phase6/report.md`
