@@ -119,9 +119,13 @@ right phase. `[~]` = in progress. Detail for the current phase lives in
       one-sided sweep gaps ≤ 0.1% of steps (event-granularity reality)
 
 **Step 6 — baseline + calibration (F8)**
-- [ ] `sim/analytics/sweep.py`; baseline measurement; parameter sweeps
-- [ ] fallback if needed: `retail.vol_feedback` (default 0.0 = off) + tests
-- [ ] `sim/config/phase6.yaml` calibrated config
+- [x] `sim/analytics/sweep.py` (dotted-path overrides, facts per run) + tests
+- [x] baseline: 3-4/7 facts (drift corrupts ACF; runs too short for vol windows)
+- [x] fallback invoked: `retail.vol_feedback` (default 0.0 = off) + tests —
+      parameter grid alone left clustering/ACF failing
+- [x] `sim/config/phase6.yaml`: ra 0.0005, quote_size 25, vol_feedback 0.7,
+      strikes ±10%, 60k steps → 7/7 on seeds 42/7/123 (also 5; 99+2024 miss
+      clustering — noted for the report)
 
 **Step 7 — EWMA surface (F6)**
 - [ ] `EwmaVolSurface` + dealer update hook + `surface_mode` switch (default flat) + tests

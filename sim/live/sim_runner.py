@@ -60,6 +60,9 @@ def _build_sim(cfg: dict) -> tuple[LimitOrderBook, Tape, Clock, list]:
             order_size_mean=float(rc["order_size_mean"]),
             direction_bias=float(rc["direction_bias"]),
             rng=rng,
+            vol_feedback=float(rc.get("vol_feedback", 0.0)),
+            baseline_vol_bps=float(rc.get("baseline_vol_bps", 5.0)),
+            vol_ratio_cap=float(rc.get("vol_ratio_cap", 10.0)),
         ))
 
     # Institution

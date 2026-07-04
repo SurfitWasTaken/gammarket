@@ -1,0 +1,99 @@
+# Phase 6 calibrated configuration (F8) — the full-run / validation config.
+#
+# params.yaml stays the general default (its values are pinned by tests and
+# by the pre-Phase-6 trajectories); THIS file carries the calibrated
+# parameters that reproduce the stylised facts (F9). Calibrated 2026-07-05
+# via sim/analytics/sweep.py at 60k steps; see results/phase6/report.md.
+#
+# Deltas from params.yaml, and why:
+#   market.max_steps 60_000        — enough sim-time for >= 5 vol windows and
+#                                    a well-powered ACF/Ljung-Box (F9).
+#   equity_mms.*.risk_aversion 0.0005
+#                                  — the F3 skew integrator: any sizeable
+#                                    skew gain integrates displaced MM
+#                                    inventory into unbounded mid drift,
+#                                    which corrupts the return ACF.
+#   equity_mms.*.quote_size 25     — deep quotes keep the book two-sided
+#                                    under vol-feedback order flow and let
+#                                    dealer hedges fill completely.
+#   retail.vol_feedback 0.7        — F8 fallback: noise-trader size scales
+#                                    with recent vol, making volatility
+#                                    self-exciting (clustering + fat tails).
+#   options.strikes_pct ±0.10      — F7: wider fixed grid instead of
+#                                    re-striking; the report tracks the
+#                                    fraction of the run with spot in-grid.
+
+market:
+  tick_size: 1
+  lot_size: 100
+  initial_price: 10000
+  initial_bid_size: 200
+  initial_ask_size: 200
+  max_steps: 60000
+  seed: 42
+  vol_window: 20
+  minutes_per_year: 525600          # D1: continuous calendar (365×24×60)
+
+agents:
+  retail:
+    n_agents: 10
+    arrival_rate: 10.0
+    order_size_mean: 2
+    direction_bias: 0.0
+    vol_feedback: 0.7      # F8 fallback: order size scales with vol ratio
+    baseline_vol_bps: 5.0  # vol_ratio denominator (mirrors MM seed)
+    vol_ratio_cap: 10.0    # cap on vol_ratio (mirrors F3)
+
+  institution:
+    arrival_rate: 5.0
+    signal_halflife: 30.0
+    signal_sigma: 1.0
+    threshold: 0.0
+    position_limit: 500
+    quote_offset_ticks: 1
+    scale: 100
+    signal_price_scale: 5
+
+  equity_mms:
+    - id: "mm_aggressive"
+      arrival_rate: 100.0
+      spread_target: 3
+      inventory_limit: 2000
+      risk_aversion: 0.0005 # F3: near-zero skew gain (integrator drift)
+      quote_size: 25        # deep book: hedges fill, no one-sided gaps
+      max_orders_per_side: 1
+      vol_window: 20
+      vol_multiplier: 2.0
+      baseline_vol_bps: 5.0
+      vol_ratio_cap: 10.0   # F3: caps the bounce-vol spread feedback
+      post_only: true       # F3: quotes never cross the BBO
+
+    - id: "mm_conservative"
+      arrival_rate: 100.0
+      spread_target: 5
+      inventory_limit: 2000
+      risk_aversion: 0.0005 # F3: near-zero skew gain (integrator drift)
+      quote_size: 25        # deep book: hedges fill, no one-sided gaps
+      max_orders_per_side: 1
+      vol_window: 20
+      vol_multiplier: 2.0
+      baseline_vol_bps: 5.0
+      vol_ratio_cap: 10.0   # F3: caps the bounce-vol spread feedback
+      post_only: true       # F3: quotes never cross the BBO
+
+  options_mm:
+    arrival_rate: 20.0           # dealer re-hedge checks per minute (E3)
+    vol_estimate: 0.20           # annualised σ seed (FlatVolSurface / EWMA)
+    spread_vols: 2.0             # bid/ask quoted ± this many vol points (E4)
+    delta_hedge_threshold: 0.05  # re-hedge if |net delta| exceeds this (E3)
+    gamma_limit: 500             # portfolio gamma cap, lots/tick (E5)
+    option_tick: 1               # option quote grid (E4)
+
+  options_flow:
+    arrival_rate: 5.0            # option trades per minute
+    max_lots: 3                  # contracts per trade ~ U[1, max_lots]
+
+options:
+  strikes_pct: [-0.10, -0.05, 0.0, 0.05, 0.10]   # F7: widened fixed grid
+  expiries_days: [7, 14, 30]
+  risk_free_rate: 0.05

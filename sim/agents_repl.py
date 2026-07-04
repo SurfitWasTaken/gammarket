@@ -145,6 +145,9 @@ def _setup_sim(config: dict) -> None:
                 order_size_mean=float(retail_cfg["order_size_mean"]),
                 direction_bias=float(retail_cfg["direction_bias"]),
                 rng=rng,
+                vol_feedback=float(retail_cfg.get("vol_feedback", 0.0)),
+                baseline_vol_bps=float(retail_cfg.get("baseline_vol_bps", 5.0)),
+                vol_ratio_cap=float(retail_cfg.get("vol_ratio_cap", 10.0)),
             )
         )
     inst_cfg = config["agents"]["institution"]
