@@ -12,29 +12,28 @@ coding standards, and the per-phase implementation contracts.
    it, CLAUDE.md wins (or fix one to match the other in the same commit).
 2. **`GOALS.md`** — the north star and the definition of done (stylised facts).
 3. **`ROADMAP.md`** — the six-phase plan and where we are.
-4. **`PHASE_5_WORKPLAN.md`** and **`PHASE_4_WORKPLAN.md`** — the completed
-   Phase 5 (Options Dealer + Delta Hedging) and Phase 4 (Options Pricing +
-   Chain) plans, kept for reference. Their decisions (E1–E6, D1–D5) are frozen
-   in `CLAUDE.md` as per-phase Implementation Contracts.
+4. **`PHASE_6_WORKPLAN.md`**, **`PHASE_5_WORKPLAN.md`**, **`PHASE_4_WORKPLAN.md`**
+   — the completed phase plans, kept for reference. Their decisions (F1–F9,
+   E1–E6, D1–D5) are frozen in `CLAUDE.md` as per-phase Implementation
+   Contracts. The Phase 6 validation verdict lives in `../results/phase6/report.md`.
 5. **`TODO.md`** — the living checklist. Keep it current as you work.
 
-## Current state (Phase 5 complete — 2026-06-12)
-- **Phases 1–5 complete.** LOB engine, equity agents (retail, institution, two
-  competing market makers), discrete-event clock, central tape, metrics, the
-  `sim/options/` library (Black-Scholes price + Greeks, flat vol surface,
-  chain), and now the **options dealer + delta-hedging loop**.
-- **All 255 tests pass:** `.venv/bin/python -m pytest tests/ -q`
-- **Phase 5 shipped** `sim/agents/options_mm.py` (dealer: BS quoting, gamma
-  cap, delta hedging) and `sim/agents/options_flow.py` (Poisson taker driving
-  the quote-driven options market). The Clock owner-routes fills so
-  flow-carried dealer hedges credit the dealer. E1–E6 are frozen in `CLAUDE.md`
-  (Phase 5 Implementation Contracts). The e2e contract holds: net delta within
-  `max(delta_hedge_threshold, 0.5)` lots of zero after every hedge cycle.
-- **No open P0/P1 debt.** One latent pre-existing self-trade accounting edge is
-  logged in the `TODO.md` backlog (not observed in any run).
-- **Phase 6 is the immediate work** — Calibration, Analytics, Full Run:
-  effective-spread/depth/vol metrics, calibration sweeps, and validating the
-  stylised-facts checklist in `GOALS.md` end-to-end.
+## Current state (PROJECT COMPLETE — Phase 6 closed 2026-07-05)
+- **All six phases complete.** LOB engine, equity agents, discrete-event
+  clock, central tape, the `sim/options/` library, the options dealer +
+  delta-hedging loop, and the Phase 6 analytics/calibration/validation layer.
+- **All 340 tests pass:** `.venv/bin/python -m pytest tests/ -q`
+- **The definition of done is met:** `.venv/bin/python run_phase6.py` runs the
+  calibrated config across 3 pre-registered seeds × 60k steps and reproduces
+  **all seven stylised facts on 2/3 seeds** (F9 gate). Report + figures:
+  `results/phase6/report.md` — including honest caveats (bar-length/horizon
+  dependence, held-out seeds, EWMA-mode outcome).
+- **Phase 6 shipped** `sim/analytics/{collector,metrics,facts,sweep}.py`, the
+  F3 long-run stability fixes (the old config crashed at ~2–5k steps),
+  `retail.vol_feedback` + `EwmaVolSurface` (both config-gated, default off),
+  `sim/config/phase6.yaml`, and `run_phase6.py`. F1–F9 are frozen in
+  `CLAUDE.md` (Phase 6 Implementation Contracts).
+- **Remaining backlog** (non-blocking) lives at the bottom of `TODO.md`.
 
 ## How to work here (house rules, from CLAUDE.md)
 - **One module at a time.** Complete and test a file before starting the next.
@@ -57,4 +56,5 @@ coding standards, and the per-phase implementation contracts.
 .venv/bin/python -m pytest tests/ -q        # full suite
 .venv/bin/python run_sim.py --no-plot       # run the full sim (Phase 5 loop), print summary
 .venv/bin/python run_sim.py                 # + writes results/phase3.png
+.venv/bin/python run_phase6.py              # F9 validation: 3 seeds × 60k steps → report
 ```

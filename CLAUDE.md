@@ -12,14 +12,16 @@ per-phase contracts. The **operating layer** (goals, roadmap, current workplan,
 TODO) lives in **`docs/`** — start at **`docs/README.md`**:
 - `docs/GOALS.md` — north star + definition of done (stylised facts)
 - `docs/ROADMAP.md` — the six-phase plan and current position
-- `docs/PHASE_5_WORKPLAN.md` — the immediate work: Options Dealer + Delta Hedging
+- `docs/PHASE_6_WORKPLAN.md` — completed: Calibration, Analytics, Full Run
+- `docs/PHASE_5_WORKPLAN.md` — completed: Options Dealer + Delta Hedging
 - `docs/PHASE_4_WORKPLAN.md` — completed: Options Pricing + Chain (reference)
 - `docs/TODO.md` — the living checklist
+- `results/phase6/report.md` — the full-run validation report (F9 verdict)
 If `docs/` and this file ever disagree, **CLAUDE.md wins** — fix one to match the
 other in the same commit.
 
 ## Architecture Overview
-Legend: `[x]` exists on disk today (end of Phase 5); `[ ]` planned for a later
+Legend: `[x]` exists on disk today (end of Phase 6); `[ ]` planned for a later
 phase and not yet created. Keep this tree in sync with reality — do not list a
 module here until it is committed.
 
@@ -32,11 +34,13 @@ sim/
 │   ├── clock.py          [x] Discrete event scheduler + MarketState builder.
 │   │                         Fills credit the *owning* agent (Order.agent_id),
 │   │                         not the stepping agent (Phase 5 E1 owner-routing).
+│   │                         Optional on_step callback + StepRecord (Phase 6 F1).
 │   ├── tape.py           [x] Central fill tape (callback-injected into LOB)
 │   └── events.py         [x] Event types: Order, Fill, Cancel, Side
 ├── agents/
 │   ├── base.py           [x] Agent base class + MarketState dataclass
-│   ├── retail.py         [x] Noise traders (Poisson arrivals, market orders)
+│   ├── retail.py         [x] Noise traders (Poisson arrivals, market orders;
+│   │                         config-gated vol_feedback, Phase 6 F8, default off)
 │   ├── institution.py    [x] Mean-reverting (OU-signal) limit speculator
 │   ├── equity_mm.py      [x] Equity market maker (inventory + vol-aware quoting)
 │   ├── options_mm.py     [x] Options dealer: BS quoting + delta hedging — Phase 5
@@ -49,22 +53,32 @@ sim/
 │   └── launch.py         [x] macOS Terminal.app spawner via osascript
 ├── options/              [x] options pricing library — Phase 4
 │   ├── pricer.py         [x] Black-Scholes pricing, Greeks (delta, gamma, vega)
-│   ├── surface.py        [x] Implied vol surface (FlatVolSurface; VolSurface protocol)
+│   ├── surface.py        [x] Vol surfaces (FlatVolSurface; EwmaVolSurface, Phase 6
+│   │                         F6, default off; surface_from_config switch)
 │   └── chain.py          [x] Options chain (strikes×expiries) + D1/D2 conversion sites
 ├── analytics/
-│   └── metrics.py        [x] returns, autocorrelation, trade sizes (NumPy-only).
-│                             (No logger.py yet — the Tape is the fill log.
-│                             Effective spread/depth/vol metrics are Phase 6.)
+│   ├── metrics.py        [x] returns, ACF, trade sizes + Phase 6 F2: bar
+│   │                         resampling, realized vol, effective spread, Roll,
+│   │                         Kyle λ, price impact, Ljung-Box, kurtosis
+│   ├── collector.py      [x] MarketDataCollector: in-memory per-step snapshots
+│   │                         via Clock.on_step (Phase 6 F1)
+│   ├── facts.py          [x] Stylised-facts evaluator — the F9 pass criteria
+│   └── sweep.py          [x] Calibration sweep harness (dotted-path overrides)
 ├── config/
-│   ├── params.yaml       [x] All tunable parameters
+│   ├── params.yaml       [x] All tunable parameters (general default)
+│   ├── phase6.yaml       [x] Calibrated full-run config (Phase 6 F8)
 │   └── loader.py         [x] Single YAML read site (load_config)
 ├── viz.py                [x] Live matplotlib LOB viz (dev tool, subprocess)
 ├── snapshot.py           [x] Pure LOB-state serialization for viz IPC (dev tool)
 ├── repl.py               [x] Interactive LOB REPL (dev tool)
 ├── agents_repl.py        [x] Agent-driven live REPL with viz (dev tool)
-tests/                    [x] 255 passing tests (LOB, agents, clock, options, e2e, tooling)
+tests/                    [x] 340 passing tests (LOB, agents, clock, options,
+                              analytics, stability, e2e, tooling)
 run_sim.py                [x] Phase 3/5 entry point (options dealer + flow switch
                               on when `agents.options_flow` is present in config)
+run_phase6.py             [x] Phase 6 validation runner: 3 seeds × 60k steps →
+                              stylised-facts verdict + results/phase6/report.md
+results/phase6/           [x] Full-run validation report + figures (committed)
 CLAUDE.md                 [x] This file
 ```
 
@@ -86,32 +100,28 @@ observable experiment before the next adds complexity.
 | 3 | Equity Market Maker | [x] |
 | 4 | Options Pricing + Chain | [x] |
 | 5 | Options Dealer + Delta Hedging | [x] |
-| 6 | Calibration, Analytics, Full Run | [~] |
+| 6 | Calibration, Analytics, Full Run | [x] |
 
-**Current position (2026-06-13):** Phases 1–5 complete; all 255 tests pass
-(`.venv/bin/python -m pytest tests/ -q`). Phase 5 shipped the options dealer
-(`agents/options_mm.py`) and the quote-driven demand flow
-(`agents/options_flow.py`), closing the core feedback loop: option fill → delta
-recompute → equity market order into the LOB → underlying moves → re-hedge. The
-E1–E6 decisions are frozen in the Phase 5 Implementation Contracts section; the
-Clock gained backward-compatible **owner-routing** (fills credit the order's
-owning agent) so the flow can carry dealer-owned hedge orders to the book. The
-e2e contract holds: net delta within `max(delta_hedge_threshold, 0.5)` lots of
-zero after every hedge cycle. No P0/P1 debt surfaced; one latent self-trade
-accounting edge (pre-existing in `base.on_fills`) is logged in the
-`docs/TODO.md` backlog.
+**Current position (2026-07-05): ALL SIX PHASES COMPLETE.** 340 tests pass
+(`.venv/bin/python -m pytest tests/ -q`) and the F9 validation gate is met:
+`run_phase6.py` on `sim/config/phase6.yaml` (3 pre-registered seeds × 60k
+steps) reproduces **all seven stylised facts on 2/3 seeds** (42 and 7 = 7/7,
+123 = 6/7 — clustering). The report + figures live in `results/phase6/`.
 
-**Phase 6** (Calibration, Analytics, Full Run) is in progress. The live
-multi-terminal dashboard (`sim/live/`) shipped: `state_writer.py` serialises the
-full simulation state (all agent positions, P&L, Greeks, LOB market data) to a
-JSON file after every clock step; the `Rich`-powered `agent_viewer.py` provides
-per-agent terminal dashboards with colour-coded P&L, position levels, option
-Greeks, and hedge logs; `surface_viz.py` renders an interactive 3D options price
-surface (strike × time-to-expiry) via matplotlib; and `launch.py` spawns all 8
-Terminal windows + the 3D surface via macOS `osascript` for a complete live
-monitoring experience.
-
-Update the Status column as phases complete.
+Phase 6 shipped in nine committed steps (see `docs/PHASE_6_WORKPLAN.md`):
+the F1–F9 contracts; the O(n²) hot-loop vol fix and the self-trade wash (F4,
+F5); the long-run stability work (F3 — before it, the default config
+**crashed** at ~2–5k steps via the bounce-vol spread feedback, and MM-vs-MM
+hot-potato churn plus the inventory-skew integrator trended the mid without
+bound; fixed by `vol_ratio_cap`, `post_only` quoting, price clamps, and a
+near-zero calibrated `risk_aversion`); per-step market-data collection (F1);
+the microstructure metrics and stylised-facts evaluator (F2, F9); the sweep
+harness and calibration (F8 — including the approved `retail.vol_feedback`
+fallback, default off, which makes volatility self-exciting); the EWMA vol
+surface (F6, default flat); and the validation run + report. Measurement
+caveats (bar-length/horizon dependence, held-out-seed results, EWMA-mode
+outcome) are disclosed in the report and in the F9 amendment above the
+Known Design Decisions section.
 
 ## Phase 3 Audit (2026-06-09) — Resolved 2026-06-10
 A full line-by-line review of every committed `.py` (excluding dev tooling) was
@@ -697,13 +707,20 @@ Analytics layers in Phase 6 may inject additional callbacks without touching LOB
 - **No options-on-options**: scope boundary — this simulator covers equity + vanilla options only
 
 ## Stylised Facts to Validate Against
-The simulation is only "working" when it reproduces:
-- [ ] Positive bid-ask spread at all times
-- [ ] Spread widens with volatility (Roll measure)
-- [ ] Price impact: large orders move the mid more than small orders
-- [ ] Autocorrelation of returns near zero (weak-form efficiency emerges)
-- [ ] Volatility clustering (ARCH effects in return series)
-- [ ] Fat tails in return distribution (excess kurtosis > 0)
+The simulation is only "working" when it reproduces (validated 2026-07-05 by
+`run_phase6.py` under the F9 spec — 60k steps, 0.25-min bars, seeds 42/7/123;
+per-seed values and caveats in `results/phase6/report.md`):
+- [x] Positive bid-ask spread at all times (≥ 1 tick at every two-sided
+      snapshot; one-sided sweep gaps ≤ 0.1% of steps — F9 amendment)
+- [x] Spread widens with volatility (windowed corr 0.37–0.69 across seeds)
+- [x] Price impact: large orders move the mid more than small orders
+      (Kyle λ > 0 on every seed; top-quartile impact ~10× bottom-quartile)
+- [x] Autocorrelation of returns near zero (95–100% of lags 1..20 inside
+      ±3/√n at the validation spec; small genuine ACF emerges at 2× horizon —
+      disclosed in the report)
+- [x] Volatility clustering (Ljung-Box on squared returns p < 0.05 on 2/3
+      seeds — the F9 gate; the weakest fact, seed-sensitive)
+- [x] Fat tails in return distribution (excess kurtosis 20–42 across seeds)
 - [x] Delta of options_mm position near zero after each hedge cycle
       (within the 0.5-lot quantisation floor, E2 — pinned by `test_e2e_phase5.py`)
 

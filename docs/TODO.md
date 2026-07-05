@@ -1,8 +1,9 @@
 # TODO — living checklist
 
 Keep this current as you work. Check items off; add discovered tasks under the
-right phase. `[~]` = in progress. Detail for the current phase lives in
-`PHASE_5_WORKPLAN.md` (Phase 4's plan is `PHASE_4_WORKPLAN.md`, completed).
+right phase. `[~]` = in progress. All six phases are complete (2026-07-05);
+the per-phase plans are `PHASE_4/5/6_WORKPLAN.md` and the validation verdict
+is `../results/phase6/report.md`. Open items live in the Backlog below.
 
 ## ✅ Done: Phase 4 — Options Pricing + Chain  (complete 2026-06-11, 217 tests)
 **Step 0 — resolve & record design decisions (blocking; see workplan §Step 0)**
@@ -85,7 +86,7 @@ right phase. `[~]` = in progress. Detail for the current phase lives in
 - [x] ROADMAP.md + this file updated
 - [x] no P0/P1 debt — one latent pre-existing edge logged in Backlog below
 
-## Now: Phase 6 — Calibration, Analytics, Full Run (see PHASE_6_WORKPLAN.md)
+## ✅ Done: Phase 6 — Calibration, Analytics, Full Run  (complete 2026-07-05, 340 tests — PROJECT COMPLETE)
 **Shipped earlier (2026-06-13): live dashboard**
 - [x] `sim/live/` — state_writer, agent_viewer, surface_viz, sim_runner, launch
 - [x] Added `rich>=13.0` to `requirements.txt`; all 255 tests unchanged
@@ -139,19 +140,24 @@ right phase. `[~]` = in progress. Detail for the current phase lives in
       0.25-min bars (amendment recorded in CLAUDE.md F9 + report caveats)
 
 **Step 9 — close-out**
-- [ ] CLAUDE.md / ROADMAP / TODO / README sync; stylised-facts boxes; test count
+- [x] CLAUDE.md / ROADMAP / GOALS / TODO / README sync; stylised-facts boxes
+      checked; test count 340; Phase 6 → [x] — **project complete**
 
 ## Backlog (non-blocking, revisit when relevant)
 - [ ] P2-2 carryover: drop the `equity_mm`/`equity_mms` singular shim **iff**
       `test_e2e_phase2.py` is ever unfrozen (currently intentionally retained).
-- [ ] Consider whether the chain re-strikes as spot drifts (deferred to Phase 6
-      per E6; revisit if a run shows spot leaving the strike grid materially).
+- [x] Chain re-striking: resolved by F7 — no mid-run re-striking; phase6.yaml
+      widens the grid to ±10% and the validation runs stayed 100% in-grid.
 - [ ] Trading-calendar time convention vs continuous (revisit in calibration).
-- [ ] Self-trade position accounting (pre-existing, latent): `base.on_fills`
-      applies one signed qty when an agent is both taker and maker of a fill,
-      but a self-trade's net position change should be 0. Reachable in theory
-      since LOB market-order surplus rests (a later opposite hedge/quote could
-      cross it); not observed in any run — book depth (200-lot seeds, MM
-      quotes) means hedges never leave surplus. Fix in `base.on_fills` (skip
-      when `taker_agent_id == maker_agent_id`) with a regression test if Phase
-      6 thins the book.
+- [x] Self-trade position accounting: fixed in Phase 6 Step 1 (F5) —
+      `base.on_fills` treats taker==maker as a wash (equity MM cash too),
+      regression tests in `tests/test_base_selftrade.py`. It WAS being hit
+      (the equity MMs self-crossed in the phase-5 e2e run).
+- [ ] Volatility clustering is the weakest stylised fact: passes the F9 gate
+      (2/3 pre-registered seeds) but is seed-sensitive and episodic; it does
+      not strengthen with horizon. A structural mechanism (e.g. agent regime
+      switching / herding) would be the next lever beyond `vol_feedback`.
+- [ ] Re-calibrate under `surface_mode: ewma` (currently 6/7 per seed) if the
+      dynamic surface should become the validated default.
+- [ ] `sim/live/` dashboards: surface the new Phase 6 state (retail
+      vol-feedback size, EWMA sigma) in `state_writer`/viewers — cosmetic.

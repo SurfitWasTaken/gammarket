@@ -9,15 +9,17 @@ is scaffolding for it.
 
 ## What "working" means
 The simulation is only successful when the emergent price series reproduces the
-**stylised facts** of real markets (tracked in `CLAUDE.md`):
+**stylised facts** of real markets (tracked in `CLAUDE.md`; ✅ validated
+2026-07-05 by `run_phase6.py` — verdict + caveats in `results/phase6/report.md`):
 
-- [ ] Positive bid-ask spread at all times
-- [ ] Spread widens with volatility (Roll measure)
-- [ ] Price impact: large orders move the mid more than small orders
-- [ ] Autocorrelation of returns near zero (weak-form efficiency)
-- [ ] Volatility clustering (ARCH effects)
-- [ ] Fat tails in the return distribution (excess kurtosis > 0)
-- [ ] Options dealer net delta near zero after each hedge cycle
+- [x] Positive bid-ask spread at all times
+- [x] Spread widens with volatility (Roll measure)
+- [x] Price impact: large orders move the mid more than small orders
+- [x] Autocorrelation of returns near zero (weak-form efficiency)
+- [x] Volatility clustering (ARCH effects) — the weakest fact: passes the
+      F9 gate (2/3 seeds), seed-sensitive at this run length
+- [x] Fat tails in the return distribution (excess kurtosis > 0)
+- [x] Options dealer net delta near zero after each hedge cycle
 
 These are the acceptance criteria for the *project*, validated in Phase 6.
 Phases 4–5 are judged by their own narrower contracts (below and in the

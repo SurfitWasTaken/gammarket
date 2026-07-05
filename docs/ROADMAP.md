@@ -11,19 +11,20 @@ the two in sync.
 | 3 | Equity Market Maker | ✅ done | Two competing MMs, vol-adjusted spread, P&L |
 | 4 | Options Pricing + Chain | ✅ done | BS prices + Greeks, flat surface, chain |
 | 5 | Options Dealer + Delta Hedging | ✅ done | Dealer quotes → hedges → moves equity book |
-| 6 | **Calibration, Analytics, Full Run** | 🔶 **in progress** | Live multi-terminal dashboard; stylised facts reproduced end-to-end |
+| 6 | Calibration, Analytics, Full Run | ✅ done | `run_phase6.py` → 7/7 stylised facts on 2/3 seeds; report in `results/phase6/` |
 
 ## Where we are
-Phases 1–5 are complete. The codebase is clean and **255 tests pass**. Phase 5
-shipped the options dealer (`agents/options_mm.py`) and the quote-driven demand
-flow (`agents/options_flow.py`), closing the core feedback loop: option fill →
-delta recompute → equity market order → underlying moves → re-hedge. The E1–E6
-decisions are frozen in CLAUDE.md (Phase 5 Implementation Contracts), and the
-e2e contract holds — net delta within `max(threshold, 0.5)` lots of zero after
-every hedge cycle. **Phase 6 (Calibration, Analytics, Full Run) is in progress**
-— the live multi-terminal dashboard (`sim/live/`) shipped with `Rich`-powered
-per-agent dashboards, matplotlib 3D options surface, and macOS Terminal.app
-spawning. Stylised facts validation and parameter calibration remain.
+**The project is complete (2026-07-05).** All six phases are done, **340 tests
+pass**, and the definition of done is met: `run_phase6.py` runs the calibrated
+config (`sim/config/phase6.yaml`) across 3 pre-registered seeds × 60k steps and
+reproduces **all seven stylised facts on 2/3 seeds** (the F9 gate) — verdict,
+figures, and honest caveats in `results/phase6/report.md`. Phase 6 followed
+`PHASE_6_WORKPLAN.md`: frozen F1–F9 contracts, long-run stability debugging
+(the pre-Phase-6 config crashed at ~2–5k steps; three root causes fixed or
+calibrated away), per-step market-data collection, the microstructure metrics
++ facts evaluator, sweep-driven calibration (including the config-gated
+`retail.vol_feedback` fallback for volatility clustering), the EWMA vol
+surface (default flat), and the validation run + report.
 
 ## Phase 4 — Options Pricing + Chain  (detailed plan: `PHASE_4_WORKPLAN.md`)
 New package `sim/options/`:
@@ -53,10 +54,13 @@ contract (held, `test_e2e_phase5.py`): **net delta within
 `max(delta_hedge_threshold, 0.5)` lots of zero after each hedge cycle** — the
 0.5 is the integer-lot quantisation floor (E2).
 
-## Phase 6 — Calibration, Analytics, Full Run
-Effective-spread / depth / realized-vol metrics (the Phase 6 additions to
-`analytics/`), parameter calibration sweeps, and a full run validated against
-the stylised-facts checklist in `GOALS.md`.
+## Phase 6 — Calibration, Analytics, Full Run  (detailed plan: `PHASE_6_WORKPLAN.md`)
+Shipped `sim/analytics/{collector,metrics,facts,sweep}.py`, the F3 stability
+guards (`vol_ratio_cap`, `post_only`, price clamps), the `retail.vol_feedback`
+extension (default off), `EwmaVolSurface` (default flat), the calibrated
+`sim/config/phase6.yaml`, and `run_phase6.py` — which validated the
+stylised-facts checklist in `GOALS.md` (7/7 on seeds 42 and 7; 6/7 on 123).
+F1–F9 are frozen in CLAUDE.md (Phase 6 Implementation Contracts).
 
 ## Sync rule
 When a phase completes: flip its status here **and** in the `CLAUDE.md` phase
