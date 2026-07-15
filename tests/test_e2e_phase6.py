@@ -82,6 +82,23 @@ class TestCalibratedConfig:
             assert mm["risk_aversion"] <= 0.001
         assert min(cfg["options"]["strikes_pct"]) <= -0.10
 
+    def test_phase6_ewma_yaml_builds_ewma_dealer(self):
+        """The dynamic-surface config (polish pass) loads and actually
+        constructs an EWMA dealer; its full 3-seed validation is
+        recorded in the config header + docs."""
+        from sim.agents.options_mm import OptionsMarketMaker
+        from sim.options.surface import EwmaVolSurface
+
+        cfg = copy.deepcopy(load_config(Path("sim/config/phase6_ewma.yaml")))
+        assert cfg["agents"]["options_mm"]["surface_mode"] == "ewma"
+        assert cfg["agents"]["options_mm"]["ewma_lambda"] == 0.99
+        cfg["market"]["max_steps"] = 300
+        result = run(cfg)
+        dealer = next(
+            a for a in result["agents"] if isinstance(a, OptionsMarketMaker)
+        )
+        assert isinstance(dealer.surface, EwmaVolSurface)
+
     def test_calibrated_run_reproduces_robust_facts(self):
         """One seed of the F9 validation, robust subset. The full
         3-seed 7/7 gate runs in run_phase6.py."""
