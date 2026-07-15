@@ -11,6 +11,7 @@ This file is the **authoritative** source for architecture, coding standards, an
 per-phase contracts. The **operating layer** (goals, roadmap, current workplan,
 TODO) lives in **`docs/`** — start at **`docs/README.md`**:
 - `docs/GOALS.md` — north star + definition of done (stylised facts)
+- `docs/RESEARCH.md` — how to run experiments / write papers off the simulator
 - `docs/ROADMAP.md` — the six-phase plan and current position
 - `docs/PHASE_6_WORKPLAN.md` — completed: Calibration, Analytics, Full Run
 - `docs/PHASE_5_WORKPLAN.md` — completed: Options Dealer + Delta Hedging
@@ -40,7 +41,9 @@ sim/
 ├── agents/
 │   ├── base.py           [x] Agent base class + MarketState dataclass
 │   ├── retail.py         [x] Noise traders (Poisson arrivals, market orders;
-│   │                         config-gated vol_feedback, Phase 6 F8, default off)
+│   │                         config-gated vol_feedback, Phase 6 F8, default off;
+│   │                         config-gated RetailRegime calm/excited sentiment
+│   │                         chain, polish pass 2026-07-15, default off)
 │   ├── institution.py    [x] Mean-reverting (OU-signal) limit speculator
 │   ├── equity_mm.py      [x] Equity market maker (inventory + vol-aware quoting)
 │   ├── options_mm.py     [x] Options dealer: BS quoting + delta hedging — Phase 5
@@ -63,21 +66,33 @@ sim/
 │   ├── collector.py      [x] MarketDataCollector: in-memory per-step snapshots
 │   │                         via Clock.on_step (Phase 6 F1)
 │   ├── facts.py          [x] Stylised-facts evaluator — the F9 pass criteria
-│   └── sweep.py          [x] Calibration sweep harness (dotted-path overrides)
+│   ├── sweep.py          [x] Calibration sweep harness (dotted-path overrides)
+│   ├── export.py         [x] Post-run CSV/JSON export + paper-ready
+│   │                         metrics_summary (polish pass; no hot-loop I/O)
+│   └── figures.py        [x] Standard five-figure set, parameterized
+│                             (extracted from run_phase6; shared with
+│                             run_experiment)
 ├── config/
 │   ├── params.yaml       [x] All tunable parameters (general default)
-│   ├── phase6.yaml       [x] Calibrated full-run config (Phase 6 F8)
+│   ├── phase6.yaml       [x] Calibrated full-run config (Phase 6 F8, flat surface)
+│   ├── phase6_ewma.yaml  [x] Calibrated dynamic-surface config (polish pass:
+│   │                         ewma_lambda 0.99 → 7/7 on all 3 pre-registered
+│   │                         seeds; held-out results in the file header)
 │   └── loader.py         [x] Single YAML read site (load_config)
 ├── viz.py                [x] Live matplotlib LOB viz (dev tool, subprocess)
 ├── snapshot.py           [x] Pure LOB-state serialization for viz IPC (dev tool)
 ├── repl.py               [x] Interactive LOB REPL (dev tool)
 ├── agents_repl.py        [x] Agent-driven live REPL with viz (dev tool)
-tests/                    [x] 340 passing tests (LOB, agents, clock, options,
-                              analytics, stability, e2e, tooling)
+tests/                    [x] 364 passing tests (LOB, agents, clock, options,
+                              analytics, stability, e2e, tooling, regime,
+                              export, live state)
 run_sim.py                [x] Phase 3/5 entry point (options dealer + flow switch
                               on when `agents.options_flow` is present in config)
 run_phase6.py             [x] Phase 6 validation runner: 3 seeds × 60k steps →
                               stylised-facts verdict + results/phase6/report.md
+run_experiment.py         [x] Generic research runner: any config × seeds →
+                              manifest/metrics JSON + CSVs + figures +
+                              experiment.md (see docs/RESEARCH.md)
 results/phase6/           [x] Full-run validation report + figures (committed)
 CLAUDE.md                 [x] This file
 ```
@@ -102,11 +117,26 @@ observable experiment before the next adds complexity.
 | 5 | Options Dealer + Delta Hedging | [x] |
 | 6 | Calibration, Analytics, Full Run | [x] |
 
-**Current position (2026-07-05): ALL SIX PHASES COMPLETE.** 340 tests pass
+**Current position (2026-07-15): ALL SIX PHASES COMPLETE + post-MVP polish
+pass done.** 364 tests pass
 (`.venv/bin/python -m pytest tests/ -q`) and the F9 validation gate is met:
 `run_phase6.py` on `sim/config/phase6.yaml` (3 pre-registered seeds × 60k
 steps) reproduces **all seven stylised facts on 2/3 seeds** (42 and 7 = 7/7,
 123 = 6/7 — clustering). The report + figures live in `results/phase6/`.
+
+**Post-MVP polish pass (2026-07-15)** cleared the `docs/TODO.md` backlog:
+(1) the live dashboards surface the Phase 6 state (retail vol-feedback
+size, regime state, dealer surface mode/σ); (2) `RetailRegime` — a shared
+calm/excited sentiment chain multiplying retail order size, the structural
+vol-clustering mechanism — ships config-gated and **default off**: sweeps
+show it makes clustering pass 6/6 seeds but the episodic variance inflates
+the return-ACF estimator past the iid ±3/√n band (findings + next levers in
+`docs/TODO.md`); (3) `sim/config/phase6_ewma.yaml` calibrates the dynamic
+surface (`ewma_lambda 0.99` → 7/7 on all 3 pre-registered seeds; held-out
+5/6/6, disclosed); (4) the P2-2 shim and time-convention backlog items are
+closed as standing decisions; (5) the research layer — `run_experiment.py`,
+`sim/analytics/{export,figures}.py`, `docs/RESEARCH.md` — turns any run
+into paper-ready artifacts (manifest/metrics JSON, CSVs, figures).
 
 Phase 6 shipped in nine committed steps (see `docs/PHASE_6_WORKPLAN.md`):
 the F1–F9 contracts; the O(n²) hot-loop vol fix and the self-trade wash (F4,
@@ -271,6 +301,13 @@ agents:
     arrival_rate: 10.0     # orders per minute (Poisson lambda)
     order_size_mean: 2     # lots
     direction_bias: 0.0    # 0 = perfectly random
+    vol_feedback: 0.0      # F8: size scales with vol ratio (0 = off)
+    baseline_vol_bps: 5.0  # vol_ratio denominator
+    vol_ratio_cap: 10.0    # cap on vol_ratio (F3 mirror)
+    # regime:              # calm/excited sentiment chain (absent = off;
+    #   excited_size_mult: 4.0    #   polish pass — see RetailRegime)
+    #   enter_rate_per_min: 0.02
+    #   exit_rate_per_min: 0.2
   institution:
     arrival_rate: 5.0
     signal_halflife: 30.0  # minutes
@@ -309,6 +346,7 @@ agents:
     delta_hedge_threshold: 0.05  # lots (E3; 0.5-lot quantisation floor applies, E2)
     gamma_limit: 500       # portfolio gamma cap, lots/tick (E5)
     option_tick: 1         # option quote grid (E4)
+    surface_mode: flat     # F6: flat | ewma (+ ewma_lambda/sigma_floor/sigma_cap)
   options_flow:            # Phase 5 quote-driven options demand (E1)
     arrival_rate: 5.0      # option trades per minute
     max_lots: 3            # contracts per trade ~ U[1, max_lots]

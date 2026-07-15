@@ -162,11 +162,35 @@ is `../results/phase6/report.md`. Open items live in the Backlog below.
       `base.on_fills` treats taker==maker as a wash (equity MM cash too),
       regression tests in `tests/test_base_selftrade.py`. It WAS being hit
       (the equity MMs self-crossed in the phase-5 e2e run).
-- [ ] Volatility clustering is the weakest stylised fact: passes the F9 gate
-      (2/3 pre-registered seeds) but is seed-sensitive and episodic; it does
-      not strengthen with horizon. A structural mechanism (e.g. agent regime
-      switching / herding) would be the next lever beyond `vol_feedback`.
-- [ ] Re-calibrate under `surface_mode: ewma` (currently 6/7 per seed) if the
-      dynamic surface should become the validated default.
-- [ ] `sim/live/` dashboards: surface the new Phase 6 state (retail
-      vol-feedback size, EWMA sigma) in `state_writer`/viewers — cosmetic.
+- [x] Volatility clustering structural mechanism: **shipped 2026-07-15** as
+      `RetailRegime` (`sim/agents/retail.py`) — a shared calm/excited
+      two-state continuous-time Markov chain that multiplies retail order
+      size during excited episodes. Config-gated under
+      `agents.retail.regime` (absent = off, RNG streams untouched),
+      14 unit tests, wired in all three runners + dashboards.
+      **Calibration findings (60k-step sweeps, 6 seeds, pinned F9 spec):**
+      the mechanism does exactly what it is for — clustering passes 6/6
+      seeds in the main variants (baseline 5/6; seed 123's Ljung-Box p goes
+      0.672 → 1e-06) — but the same episodic variance *inflates the
+      return-ACF estimator* beyond the iid ±3/√n band (fact 4 penalises the
+      structure fact 5 demands), and larger multipliers sweep the book
+      one-sided / leave partial dealer hedges. No regime variant beat
+      `phase6.yaml` on the full 7-fact gate, so the validated default is
+      unchanged and the regime ships **off**. Next lever if this is
+      revisited: heteroskedasticity-robust ACF confidence bands for fact 4
+      (the iid band is known to be too tight under ARCH-like variance).
+- [x] Re-calibrate under `surface_mode: ewma`: **done 2026-07-15** —
+      `sim/config/phase6_ewma.yaml` ships `ewma_lambda 0.99` (sweep:
+      0.94 → 7/6/6, 0.97 → 7/5/6, 0.99 → **7/7/7** on seeds 42/7/123;
+      held-out 5/99/2024 = 5/6/6, disclosed in the config header). A slow
+      surface tracks the vol level without making the dealer chase noise.
+- [x] `sim/live/` dashboards: **done 2026-07-15** — `state_writer`/viewers
+      show retail vol-feedback effective size, regime state, and the
+      dealer's surface mode + current σ (plus a retail-panel rendering fix).
+
+## Post-polish backlog (non-blocking)
+- [ ] Heteroskedasticity-robust ACF bands for the fact-4 test (would let a
+      structural clustering mechanism and the efficiency fact coexist; see
+      the regime findings above).
+- [ ] Joint re-calibration with `retail.regime` enabled (needs the robust
+      fact-4 test first, plus book depth able to absorb excited episodes).

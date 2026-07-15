@@ -17,12 +17,16 @@ coding standards, and the per-phase implementation contracts.
    E1–E6, D1–D5) are frozen in `CLAUDE.md` as per-phase Implementation
    Contracts. The Phase 6 validation verdict lives in `../results/phase6/report.md`.
 5. **`TODO.md`** — the living checklist. Keep it current as you work.
+6. **`RESEARCH.md`** — the research layer (post-MVP polish): how to run
+   reproducible experiments and get paper-ready artifacts (metrics JSON,
+   CSVs, figures) out of the simulator.
 
 ## Current state (PROJECT COMPLETE — Phase 6 closed 2026-07-05)
 - **All six phases complete.** LOB engine, equity agents, discrete-event
   clock, central tape, the `sim/options/` library, the options dealer +
   delta-hedging loop, and the Phase 6 analytics/calibration/validation layer.
-- **All 340 tests pass:** `.venv/bin/python -m pytest tests/ -q`
+- **All 364 tests pass** (340 at Phase 6 close + 24 from the polish pass):
+  `.venv/bin/python -m pytest tests/ -q`
 - **The definition of done is met:** `.venv/bin/python run_phase6.py` runs the
   calibrated config across 3 pre-registered seeds × 60k steps and reproduces
   **all seven stylised facts on 2/3 seeds** (F9 gate). Report + figures:
@@ -33,6 +37,13 @@ coding standards, and the per-phase implementation contracts.
   `retail.vol_feedback` + `EwmaVolSurface` (both config-gated, default off),
   `sim/config/phase6.yaml`, and `run_phase6.py`. F1–F9 are frozen in
   `CLAUDE.md` (Phase 6 Implementation Contracts).
+- **Post-MVP polish pass (2026-07-15)** cleared the backlog: live dashboards
+  show the Phase 6 state; `RetailRegime` (config-gated calm/excited sentiment
+  chain, default off) is the structural vol-clustering mechanism; the
+  dynamic-surface config `sim/config/phase6_ewma.yaml` is calibrated
+  (`ewma_lambda 0.99` → 7/7 on all 3 pre-registered seeds); and the research
+  layer (`run_experiment.py`, `sim/analytics/{export,figures}.py`,
+  `RESEARCH.md`) turns runs into paper-ready artifacts.
 - **Remaining backlog** (non-blocking) lives at the bottom of `TODO.md`.
 
 ## How to work here (house rules, from CLAUDE.md)
@@ -57,4 +68,6 @@ coding standards, and the per-phase implementation contracts.
 .venv/bin/python run_sim.py --no-plot       # run the full sim (Phase 5 loop), print summary
 .venv/bin/python run_sim.py                 # + writes results/phase3.png
 .venv/bin/python run_phase6.py              # F9 validation: 3 seeds × 60k steps → report
+.venv/bin/python run_experiment.py --out results/experiments/<name>  # research run
+                                            # (+ --set key=value overrides; see RESEARCH.md)
 ```

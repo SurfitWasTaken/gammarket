@@ -100,6 +100,11 @@ its own sweep before shipping:
   by `excited_size_mult` during excited episodes. Keys:
   `excited_size_mult`, `enter_rate_per_min`, `exit_rate_per_min`. A
   structural clustering mechanism independent of the vol estimate.
+  Known trade-off (from the shipping sweep, recorded in `TODO.md`): it
+  makes volatility clustering essentially guaranteed (6/6 seeds), but
+  the episodic variance inflates the sample return ACF beyond the iid
+  ±3/√n band the efficiency fact uses — a textbook ARCH effect worth a
+  paragraph in any paper that uses it.
 - `agents.options_mm.surface_mode: ewma` (F6) — the dealer prices off an
   EWMA realized-vol surface instead of the flat one
   (`ewma_lambda`, `sigma_floor`, `sigma_cap`). See

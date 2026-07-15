@@ -26,6 +26,14 @@ calibrated away), per-step market-data collection, the microstructure metrics
 `retail.vol_feedback` fallback for volatility clustering), the EWMA vol
 surface (default flat), and the validation run + report.
 
+**Post-MVP polish pass (2026-07-15):** the `TODO.md` backlog is cleared —
+live dashboards show the Phase 6 state; the `RetailRegime` structural
+clustering mechanism ships config-gated (default off; sweep findings in
+`TODO.md`); `phase6_ewma.yaml` calibrates the dynamic surface (7/7 on all
+3 pre-registered seeds at `ewma_lambda 0.99`); and the research layer
+(`run_experiment.py` + `docs/RESEARCH.md`) makes runs paper-ready. 364
+tests pass.
+
 ## Phase 4 — Options Pricing + Chain  (detailed plan: `PHASE_4_WORKPLAN.md`)
 New package `sim/options/`:
 - `pricer.py` — Black-Scholes pricing + Greeks (delta, gamma, vega; theta/rho
