@@ -23,7 +23,7 @@ from sim.agents.equity_mm import EquityMarketMaker, EquityMMConfig
 from sim.agents.institution import Institution
 from sim.agents.options_flow import OptionsFlow, OptionsFlowConfig
 from sim.agents.options_mm import OptionsMarketMaker, OptionsMMConfig
-from sim.agents.retail import Retail
+from sim.agents.retail import Retail, regime_from_config
 from sim.analytics.collector import MarketDataCollector
 from sim.analytics.metrics import (
     autocorrelation,
@@ -66,6 +66,7 @@ def _seed_bbo(book: LimitOrderBook, cfg_market: dict) -> None:
 
 def _build_agents(cfg: dict, rng: np.random.Generator) -> list:
     retail_cfg = cfg["agents"]["retail"]
+    regime = regime_from_config(retail_cfg, int(cfg["market"]["seed"]))
     agents: list = []
     for i in range(int(retail_cfg["n_agents"])):
         agents.append(
@@ -77,6 +78,7 @@ def _build_agents(cfg: dict, rng: np.random.Generator) -> list:
                 vol_feedback=float(retail_cfg.get("vol_feedback", 0.0)),
                 baseline_vol_bps=float(retail_cfg.get("baseline_vol_bps", 5.0)),
                 vol_ratio_cap=float(retail_cfg.get("vol_ratio_cap", 10.0)),
+                regime=regime,
             )
         )
     inst_cfg = cfg["agents"]["institution"]

@@ -165,10 +165,18 @@ def render_retail(state: dict) -> Panel:
         Text(""),
     )
 
+    regime = next(
+        (a.get("regime") for a in retail.values() if a.get("regime")), None
+    )
+    fb_txt = (
+        "vol feedback: ON (size scales with vol ratio)" if any_feedback
+        else "vol feedback: off"
+    )
+    regime_txt = f"   regime: {regime.upper()}" if regime else ""
     footer = Text(
-        "  vol feedback: ON (size scales with vol ratio)" if any_feedback
-        else "  vol feedback: off",
-        style="cyan" if any_feedback else "dim",
+        f"  {fb_txt}{regime_txt}",
+        style="bold red" if regime == "excited"
+        else ("cyan" if any_feedback or regime else "dim"),
     )
     return Panel(
         Group(t, footer),

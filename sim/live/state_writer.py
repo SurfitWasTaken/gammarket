@@ -68,19 +68,15 @@ def _extract_agent_state(
     }
 
     if isinstance(agent, Retail):
-        effective_mean = agent.order_size_mean
-        if agent.vol_feedback > 0.0 and rolling_vol_bps is not None:
-            ratio = min(
-                rolling_vol_bps / agent.baseline_vol_bps, agent.vol_ratio_cap
-            )
-            effective_mean = max(
-                agent.order_size_mean
-                * (1.0 + agent.vol_feedback * (ratio - 1.0)),
-                1.0,
-            )
         s.update({
             "vol_feedback": agent.vol_feedback,
-            "effective_size_mean": effective_mean,
+            "effective_size_mean": agent.effective_size_mean(
+                rolling_vol_bps, now
+            ),
+            "regime": (
+                None if agent.regime is None
+                else ("excited" if agent.regime.excited else "calm")
+            ),
         })
 
     elif isinstance(agent, Institution):

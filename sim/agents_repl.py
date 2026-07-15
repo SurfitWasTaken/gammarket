@@ -51,7 +51,7 @@ from sim.agents.equity_mm import EquityMarketMaker, EquityMMConfig
 from sim.agents.institution import Institution
 from sim.agents.options_flow import OptionsFlow, OptionsFlowConfig
 from sim.agents.options_mm import OptionsMarketMaker, OptionsMMConfig
-from sim.agents.retail import Retail
+from sim.agents.retail import Retail, regime_from_config
 from sim.config.loader import load_config
 from sim.core.clock import Clock
 from sim.core.events import Order, Side
@@ -138,6 +138,9 @@ def _setup_sim(config: dict) -> None:
     )
 
     retail_cfg = config["agents"]["retail"]
+    regime = regime_from_config(
+        retail_cfg, int(config["market"]["seed"])
+    )
     for i in range(int(retail_cfg["n_agents"])):
         agents.append(
             Retail(
@@ -148,6 +151,7 @@ def _setup_sim(config: dict) -> None:
                 vol_feedback=float(retail_cfg.get("vol_feedback", 0.0)),
                 baseline_vol_bps=float(retail_cfg.get("baseline_vol_bps", 5.0)),
                 vol_ratio_cap=float(retail_cfg.get("vol_ratio_cap", 10.0)),
+                regime=regime,
             )
         )
     inst_cfg = config["agents"]["institution"]
