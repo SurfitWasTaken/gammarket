@@ -698,6 +698,13 @@ Analytics layers in Phase 6 may inject additional callbacks without touching LOB
 
 ## Known Design Decisions & Rationale
 - **Integer ticks for prices**: avoids floating-point drift corrupting the LOB sort order
+- **`equity_mm`/`equity_mms` shim is permanent** (closed 2026-07-15): the frozen
+  `test_e2e_phase2.py` passes the singular key, and it stays frozen for the life
+  of the project, so `run_sim.py` accepts both forms indefinitely (Audit P2-2)
+- **Continuous calendar is the project time convention** (closed 2026-07-15):
+  all calibration and the F9 verdict use D1's `minutes_per_year: 525_600`.
+  A trading calendar (98_280) is a one-key config change but invalidates the
+  calibration, so it is a per-experiment choice, not a pending migration
 - **Poisson arrivals for retail**: standard in market microstructure literature (Glosten-Milgrom)
 - **BBO seeded in runner, not agents**: keeps agent logic and tests isolated from bootstrap state
 - **params.yaml from Phase 2**: single source of truth; agents take config dicts, never read files

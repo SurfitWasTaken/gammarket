@@ -144,11 +144,20 @@ is `../results/phase6/report.md`. Open items live in the Backlog below.
       checked; test count 340; Phase 6 → [x] — **project complete**
 
 ## Backlog (non-blocking, revisit when relevant)
-- [ ] P2-2 carryover: drop the `equity_mm`/`equity_mms` singular shim **iff**
-      `test_e2e_phase2.py` is ever unfrozen (currently intentionally retained).
+- [x] P2-2 carryover: **closed as a standing design decision (2026-07-15)** —
+      the `equity_mm`/`equity_mms` singular shim stays for as long as
+      `test_e2e_phase2.py` is frozen, which is for the life of the project.
+      No longer tracked as an open task (recorded in CLAUDE.md Known Design
+      Decisions).
 - [x] Chain re-striking: resolved by F7 — no mid-run re-striking; phase6.yaml
       widens the grid to ±10% and the validation runs stayed 100% in-grid.
-- [ ] Trading-calendar time convention vs continuous (revisit in calibration).
+- [x] Trading-calendar time convention: **closed as a standing design decision
+      (2026-07-15)** — the project convention is the continuous calendar
+      (D1, `minutes_per_year: 525_600`); all calibration and the F9 verdict
+      were produced under it. A trading calendar remains a one-key config
+      change (`market.minutes_per_year: 98_280`) but requires re-calibration,
+      so it is a per-experiment choice, not an open task (recorded in
+      CLAUDE.md Known Design Decisions).
 - [x] Self-trade position accounting: fixed in Phase 6 Step 1 (F5) —
       `base.on_fills` treats taker==maker as a wash (equity MM cash too),
       regression tests in `tests/test_base_selftrade.py`. It WAS being hit
