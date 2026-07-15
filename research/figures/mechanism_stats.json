@@ -1,0 +1,26 @@
+{
+  "no feedback": {
+    "seed": 123,
+    "n_bars": 728,
+    "ljung_box_p_sq_returns": 0.9938938765331088,
+    "excess_kurtosis": 205.3824352875293,
+    "acf_frac_inside_band": 1.0,
+    "facts_passed": 5
+  },
+  "vol feedback (validated)": {
+    "seed": 123,
+    "n_bars": 727,
+    "ljung_box_p_sq_returns": 0.6724785905757096,
+    "excess_kurtosis": 39.60311603731552,
+    "acf_frac_inside_band": 0.95,
+    "facts_passed": 6
+  },
+  "feedback + regime": {
+    "seed": 123,
+    "n_bars": 728,
+    "ljung_box_p_sq_returns": 1.1500490421075402e-06,
+    "excess_kurtosis": 93.65934870939667,
+    "acf_frac_inside_band": 0.65,
+    "facts_passed": 3
+  }
+}

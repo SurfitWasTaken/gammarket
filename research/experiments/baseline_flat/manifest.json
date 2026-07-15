@@ -1,0 +1,108 @@
+{
+  "label": "Validated flat-surface configuration (phase6.yaml), pre-registered seeds",
+  "config": "sim/config/phase6.yaml",
+  "overrides": {},
+  "seeds": [
+    42,
+    7,
+    123
+  ],
+  "max_steps": 60000,
+  "bar_minutes": 0.25,
+  "window_bars": 60,
+  "git_commit": "dc2369788cd176dfa85ff9bf77ee7e56b3f3a81e",
+  "generated": "2026-07-15T15:01:54",
+  "wall_seconds": 60.0,
+  "resolved_config": {
+    "market": {
+      "tick_size": 1,
+      "lot_size": 100,
+      "initial_price": 10000,
+      "initial_bid_size": 200,
+      "initial_ask_size": 200,
+      "max_steps": 60000,
+      "seed": 42,
+      "vol_window": 20,
+      "minutes_per_year": 525600
+    },
+    "agents": {
+      "retail": {
+        "n_agents": 10,
+        "arrival_rate": 10.0,
+        "order_size_mean": 2,
+        "direction_bias": 0.0,
+        "vol_feedback": 0.7,
+        "baseline_vol_bps": 5.0,
+        "vol_ratio_cap": 10.0
+      },
+      "institution": {
+        "arrival_rate": 5.0,
+        "signal_halflife": 30.0,
+        "signal_sigma": 1.0,
+        "threshold": 0.0,
+        "position_limit": 500,
+        "quote_offset_ticks": 1,
+        "scale": 100,
+        "signal_price_scale": 5
+      },
+      "equity_mms": [
+        {
+          "id": "mm_aggressive",
+          "arrival_rate": 100.0,
+          "spread_target": 3,
+          "inventory_limit": 2000,
+          "risk_aversion": 0.0005,
+          "quote_size": 25,
+          "max_orders_per_side": 1,
+          "vol_window": 20,
+          "vol_multiplier": 2.0,
+          "baseline_vol_bps": 5.0,
+          "vol_ratio_cap": 10.0,
+          "post_only": true
+        },
+        {
+          "id": "mm_conservative",
+          "arrival_rate": 100.0,
+          "spread_target": 5,
+          "inventory_limit": 2000,
+          "risk_aversion": 0.0005,
+          "quote_size": 25,
+          "max_orders_per_side": 1,
+          "vol_window": 20,
+          "vol_multiplier": 2.0,
+          "baseline_vol_bps": 5.0,
+          "vol_ratio_cap": 10.0,
+          "post_only": true
+        }
+      ],
+      "options_mm": {
+        "arrival_rate": 20.0,
+        "vol_estimate": 0.2,
+        "spread_vols": 2.0,
+        "delta_hedge_threshold": 0.05,
+        "gamma_limit": 500,
+        "option_tick": 1,
+        "surface_mode": "flat"
+      },
+      "options_flow": {
+        "arrival_rate": 5.0,
+        "max_lots": 3
+      }
+    },
+    "options": {
+      "strikes_pct": [
+        -0.1,
+        -0.05,
+        0.0,
+        0.05,
+        0.1
+      ],
+      "expiries_days": [
+        7,
+        14,
+        30
+      ],
+      "risk_free_rate": 0.05
+    }
+  }
+}

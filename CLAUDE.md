@@ -94,6 +94,12 @@ run_experiment.py         [x] Generic research runner: any config × seeds →
                               manifest/metrics JSON + CSVs + figures +
                               experiment.md (see docs/RESEARCH.md)
 results/phase6/           [x] Full-run validation report + figures (committed)
+research/                 [x] Publishable material (2026-07-15): paper.md
+                              (working paper w/ citations), experiments/
+                              (4 reproducible run_experiment outputs),
+                              figures/ + make_figures.py (mechanism-
+                              comparison harness), configs/ (paper-only
+                              regime config). See research/README.md.
 CLAUDE.md                 [x] This file
 ```
 

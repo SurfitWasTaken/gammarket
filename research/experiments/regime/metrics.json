@@ -1,0 +1,188 @@
+{
+  "42": {
+    "facts": {
+      "positive_spread": {
+        "passed": false,
+        "value": 1.0,
+        "detail": "min spread 1 ticks (need >= 1); one-sided snapshots 0.268% (need <= 0.1%)"
+      },
+      "spread_widens_with_vol": {
+        "passed": false,
+        "value": 0.15348872235969416,
+        "detail": "corr(windowed vol, windowed spread) 0.153 (need > 0.2)"
+      },
+      "price_impact": {
+        "passed": true,
+        "value": 0.8507344084398171,
+        "detail": "Kyle lambda 0.8507 (need > 0); impact small 0.407 vs large 13.504 ticks (need large > small)"
+      },
+      "return_acf_near_zero": {
+        "passed": false,
+        "value": 0.75,
+        "detail": "75% of lags 1..20 inside +-3/sqrt(n)=0.111 (need >= 90%)"
+      },
+      "volatility_clustering": {
+        "passed": true,
+        "value": 3.866183553753165e-42,
+        "detail": "Ljung-Box on squared returns p=3.87e-42 (need < 0.05)"
+      },
+      "fat_tails": {
+        "passed": true,
+        "value": 146.744738061347,
+        "detail": "excess kurtosis 146.745 (need > 0)"
+      },
+      "dealer_delta_flat": {
+        "passed": false,
+        "value": 7.779265269950198,
+        "detail": "worst post-hedge |delta| 7.779 lots over 608 hedges (need <= 0.5)"
+      }
+    },
+    "n_passed": 3,
+    "metrics": {
+      "n_steps": 60000,
+      "n_fills": 21571,
+      "sim_minutes": 183.13534734580682,
+      "bar_minutes": 0.25,
+      "n_bars": 732,
+      "realized_vol_annualised": 17.76833644920459,
+      "mean_quoted_spread_ticks": 22.63159477932452,
+      "one_sided_snapshot_frac": 0.002683333333333333,
+      "mean_effective_spread_bps": 31.273139156173432,
+      "roll_measure_ticks": 27.236691063044365,
+      "kyle_lambda": 0.8507344084398171,
+      "mean_abs_return_acf": 0.06827944697513756,
+      "ljung_box_q_sq_returns": 222.10936737989323,
+      "ljung_box_p_sq_returns": 3.866183553753165e-42,
+      "excess_kurtosis": 146.744738061347,
+      "n_option_trades": 917,
+      "n_hedges": 608,
+      "worst_post_hedge_delta_lots": 7.779265269950198,
+      "gamma_rejections": 0,
+      "option_cash_flow": 25372.0
+    }
+  },
+  "7": {
+    "facts": {
+      "positive_spread": {
+        "passed": true,
+        "value": 1.0,
+        "detail": "min spread 1 ticks (need >= 1); one-sided snapshots 0.025% (need <= 0.1%)"
+      },
+      "spread_widens_with_vol": {
+        "passed": true,
+        "value": 0.5580010549619986,
+        "detail": "corr(windowed vol, windowed spread) 0.558 (need > 0.2)"
+      },
+      "price_impact": {
+        "passed": true,
+        "value": 0.08729667735643687,
+        "detail": "Kyle lambda 0.0873 (need > 0); impact small 0.109 vs large 1.254 ticks (need large > small)"
+      },
+      "return_acf_near_zero": {
+        "passed": true,
+        "value": 0.95,
+        "detail": "95% of lags 1..20 inside +-3/sqrt(n)=0.111 (need >= 90%)"
+      },
+      "volatility_clustering": {
+        "passed": true,
+        "value": 1.8426445467163882e-39,
+        "detail": "Ljung-Box on squared returns p=1.84e-39 (need < 0.05)"
+      },
+      "fat_tails": {
+        "passed": true,
+        "value": 134.76611045558042,
+        "detail": "excess kurtosis 134.766 (need > 0)"
+      },
+      "dealer_delta_flat": {
+        "passed": true,
+        "value": 0.49994650954946807,
+        "detail": "worst post-hedge |delta| 0.500 lots over 574 hedges (need <= 0.5)"
+      }
+    },
+    "n_passed": 7,
+    "metrics": {
+      "n_steps": 60000,
+      "n_fills": 21517,
+      "sim_minutes": 182.58978306271516,
+      "bar_minutes": 0.25,
+      "n_bars": 730,
+      "realized_vol_annualised": 1.2930388565237971,
+      "mean_quoted_spread_ticks": 24.779611569559055,
+      "one_sided_snapshot_frac": 0.00025,
+      "mean_effective_spread_bps": 28.74417263203296,
+      "roll_measure_ticks": 30.311074729854756,
+      "kyle_lambda": 0.08729667735643687,
+      "mean_abs_return_acf": 0.03802079091100426,
+      "ljung_box_q_sq_returns": 209.30547571401434,
+      "ljung_box_p_sq_returns": 1.8426445467163882e-39,
+      "excess_kurtosis": 134.76611045558042,
+      "n_option_trades": 887,
+      "n_hedges": 574,
+      "worst_post_hedge_delta_lots": 0.49994650954946807,
+      "gamma_rejections": 0,
+      "option_cash_flow": 7922.0
+    }
+  },
+  "123": {
+    "facts": {
+      "positive_spread": {
+        "passed": false,
+        "value": 1.0,
+        "detail": "min spread 1 ticks (need >= 1); one-sided snapshots 0.542% (need <= 0.1%)"
+      },
+      "spread_widens_with_vol": {
+        "passed": false,
+        "value": 0.16707139756791425,
+        "detail": "corr(windowed vol, windowed spread) 0.167 (need > 0.2)"
+      },
+      "price_impact": {
+        "passed": true,
+        "value": 0.5715112701975564,
+        "detail": "Kyle lambda 0.5715 (need > 0); impact small 0.413 vs large 18.255 ticks (need large > small)"
+      },
+      "return_acf_near_zero": {
+        "passed": false,
+        "value": 0.65,
+        "detail": "65% of lags 1..20 inside +-3/sqrt(n)=0.111 (need >= 90%)"
+      },
+      "volatility_clustering": {
+        "passed": true,
+        "value": 1.1500490421075402e-06,
+        "detail": "Ljung-Box on squared returns p=1.15e-06 (need < 0.05)"
+      },
+      "fat_tails": {
+        "passed": true,
+        "value": 93.65934870939667,
+        "detail": "excess kurtosis 93.659 (need > 0)"
+      },
+      "dealer_delta_flat": {
+        "passed": false,
+        "value": 14.529282776300331,
+        "detail": "worst post-hedge |delta| 14.529 lots over 673 hedges (need <= 0.5)"
+      }
+    },
+    "n_passed": 3,
+    "metrics": {
+      "n_steps": 60000,
+      "n_fills": 22606,
+      "sim_minutes": 182.00455209093218,
+      "bar_minutes": 0.25,
+      "n_bars": 728,
+      "realized_vol_annualised": 14.692827655968655,
+      "mean_quoted_spread_ticks": 25.812635106828655,
+      "one_sided_snapshot_frac": 0.005416666666666667,
+      "mean_effective_spread_bps": 39.68292071963597,
+      "roll_measure_ticks": 29.90314210774206,
+      "kyle_lambda": 0.5715112701975564,
+      "mean_abs_return_acf": 0.09738470293661419,
+      "ljung_box_q_sq_returns": 46.5288295490064,
+      "ljung_box_p_sq_returns": 1.1500490421075402e-06,
+      "excess_kurtosis": 93.65934870939667,
+      "n_option_trades": 877,
+      "n_hedges": 673,
+      "worst_post_hedge_delta_lots": 14.529282776300331,
+      "gamma_rejections": 0,
+      "option_cash_flow": 48045.0
+    }
+  }
+}
