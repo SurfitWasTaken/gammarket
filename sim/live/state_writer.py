@@ -16,6 +16,7 @@ from sim.core.lob import LimitOrderBook
 from sim.core.tape import Tape
 from sim.options.chain import spot_from_book
 from sim.options.pricer import bs_greeks, bs_price
+from sim.options.surface import EwmaVolSurface
 
 _RECENT_FILLS_MAX = 30
 _RECENT_HEDGES_MAX = 6
@@ -57,6 +58,7 @@ def _extract_market_state(book: LimitOrderBook) -> dict:
 
 def _extract_agent_state(
     agent: Any, mid: float | None, tick_size: int, now: float,
+    rolling_vol_bps: float | None = None,
 ) -> dict:
     s: dict[str, Any] = {
         "agent_id": agent.agent_id,
@@ -65,7 +67,23 @@ def _extract_agent_state(
         "open_orders": len(agent.open_order_ids),
     }
 
-    if isinstance(agent, Institution):
+    if isinstance(agent, Retail):
+        effective_mean = agent.order_size_mean
+        if agent.vol_feedback > 0.0 and rolling_vol_bps is not None:
+            ratio = min(
+                rolling_vol_bps / agent.baseline_vol_bps, agent.vol_ratio_cap
+            )
+            effective_mean = max(
+                agent.order_size_mean
+                * (1.0 + agent.vol_feedback * (ratio - 1.0)),
+                1.0,
+            )
+        s.update({
+            "vol_feedback": agent.vol_feedback,
+            "effective_size_mean": effective_mean,
+        })
+
+    elif isinstance(agent, Institution):
         s.update({
             "signal": agent.signal,
             "target": int(agent.signal * agent.scale),
@@ -128,6 +146,10 @@ def _extract_agent_state(
             "portfolio_gamma": port_gamma,
             "gamma_limit": agent.config.gamma_limit,
             "vol_estimate": agent.config.vol_estimate,
+            "surface_mode": (
+                "ewma" if isinstance(agent.surface, EwmaVolSurface) else "flat"
+            ),
+            "surface_sigma": getattr(agent.surface, "sigma", None),
             "option_positions": positions,
             "recent_hedges": [
                 {
@@ -235,13 +257,16 @@ def extract_all_state(
     now = float(clock.now)
     market_state = _extract_market_state(book)
     mid = market_state["mid"]
-    market_state["rolling_vol_bps"] = _compute_rolling_vol(tape, vol_window)
+    rolling_vol_bps = _compute_rolling_vol(tape, vol_window)
+    market_state["rolling_vol_bps"] = rolling_vol_bps
     market_state["last_fill_price"] = tape.fills[-1].price if tape.fills else None
 
     agents_state: dict[str, dict] = {}
     dealer: OptionsMarketMaker | None = None
     for a in agents:
-        agents_state[a.agent_id] = _extract_agent_state(a, mid, tick_size, now)
+        agents_state[a.agent_id] = _extract_agent_state(
+            a, mid, tick_size, now, rolling_vol_bps
+        )
         if isinstance(a, OptionsMarketMaker):
             dealer = a
 

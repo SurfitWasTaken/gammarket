@@ -140,25 +140,40 @@ def render_retail(state: dict) -> Panel:
     t.add_column("Agent", justify="left", width=14)
     t.add_column("Position", justify="right", width=8)
     t.add_column("Orders", justify="right", width=6)
+    t.add_column("EffSize", justify="right", width=7)
 
     total_pos = 0
+    any_feedback = False
     for aid, a in sorted(retail.items()):
         pos = a.get("position", 0)
         total_pos += pos
+        eff = a.get("effective_size_mean")
+        if a.get("vol_feedback", 0.0):
+            any_feedback = True
         t.add_row(
             Text(aid),
             _pos_style(pos),
             str(a.get("open_orders", 0)),
+            _fmt(eff, 1) if eff is not None else "—",
         )
 
-        t.add_row("", Text("──────", style="dim"), "")
-        t.add_row(
-            Text(f"Total ({len(retail)} agents)", style="bold"),
-            _pos_style(total_pos),
-            Text(""),
-        )
+    t.add_row("", Text("──────", style="dim"), "", "")
+    t.add_row(
+        Text(f"Total ({len(retail)} agents)", style="bold"),
+        _pos_style(total_pos),
+        Text(""),
+        Text(""),
+    )
 
-    return Panel(t, title="[bold green]Retail Agents[/]", border_style="green")
+    footer = Text(
+        "  vol feedback: ON (size scales with vol ratio)" if any_feedback
+        else "  vol feedback: off",
+        style="cyan" if any_feedback else "dim",
+    )
+    return Panel(
+        Group(t, footer),
+        title="[bold green]Retail Agents[/]", border_style="green",
+    )
 
 
 def render_institution(a: dict) -> Panel:
@@ -230,6 +245,13 @@ def render_options_mm(a: dict) -> Panel:
     rej = a.get("gamma_rejections", 0)
     glim = a.get("gamma_limit", 0)
     lines.append(Text(f"  γ rejections: {rej}   |   γ limit: {glim}"))
+    mode = a.get("surface_mode")
+    sig = a.get("surface_sigma")
+    if mode is not None:
+        surf = Text(f"  Surface:     {mode}", style="cyan" if mode == "ewma" else "white")
+        if sig is not None:
+            surf += Text(f"   σ = {sig:.4f}")
+        lines.append(surf)
     lines.append(Text(""))
 
     positions = a.get("option_positions", [])
